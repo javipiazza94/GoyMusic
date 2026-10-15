@@ -7,6 +7,7 @@ pub mod m3u;
 pub mod playlists;
 pub mod queries;
 pub mod scanner;
+pub mod search;
 pub mod tags;
 
 mod maintenance;
