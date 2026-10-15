@@ -7,3 +7,4 @@ pub mod scanner;
 pub mod tags;
 
 mod maintenance;
+mod moves;

@@ -13,6 +13,7 @@ use walkdir::WalkDir;
 use crate::db::Db;
 use crate::error::Result;
 use crate::maintenance;
+use crate::moves;
 use crate::tags::{read_tags, TrackTags};
 
 pub const AUDIO_EXTENSIONS: &[&str] = &["mp3", "flac", "ogg", "oga", "wav", "m4a", "mp4", "aac"];
@@ -76,6 +77,7 @@ pub fn scan(db: &mut Db, events: &EventBus) -> Result<ScanReport> {
         .collect();
 
     let tx = db.conn_mut().transaction()?;
+    let mut missing = moves::load_missing(&tx, &missing)?;
     for (done, (file, existing, tags)) in read.into_iter().enumerate() {
         match tags {
             // an unreadable changed file keeps its previous row
@@ -83,14 +85,22 @@ pub fn scan(db: &mut Db, events: &EventBus) -> Result<ScanReport> {
                 path: file.path.clone(),
                 message: e.to_string(),
             }),
-            Ok(tags) => {
-                write_track(&tx, file, &tags, existing)?;
-                if existing.is_some() {
+            Ok(tags) => match existing {
+                Some(id) => {
+                    write_track(&tx, file, &tags, Some(id))?;
                     report.updated += 1;
-                } else {
-                    report.added += 1;
                 }
-            }
+                None => match moves::take_match(&mut missing, file, &tags) {
+                    Some(id) => {
+                        write_track(&tx, file, &tags, Some(id))?;
+                        report.moved += 1;
+                    }
+                    None => {
+                        write_track(&tx, file, &tags, None)?;
+                        report.added += 1;
+                    }
+                },
+            },
         }
         if (done + 1) % PROGRESS_EVERY == 0 {
             events.publish(Event::ScanProgress {
@@ -99,8 +109,9 @@ pub fn scan(db: &mut Db, events: &EventBus) -> Result<ScanReport> {
             });
         }
     }
-    maintenance::delete_tracks(&tx, &missing)?;
-    report.removed = missing.len();
+    let removed: Vec<i64> = missing.iter().map(|m| m.id).collect();
+    maintenance::delete_tracks(&tx, &removed)?;
+    report.removed = removed.len();
     maintenance::cleanup_orphans(&tx)?;
     tx.commit()?;
 

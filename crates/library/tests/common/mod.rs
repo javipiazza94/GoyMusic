@@ -4,6 +4,7 @@ use std::f32::consts::PI;
 use std::path::Path;
 
 use lofty::config::WriteOptions;
+use lofty::id3::v2::{Frame, Id3v2Tag, UniqueFileIdentifierFrame};
 use lofty::prelude::*;
 use lofty::tag::{ItemKey, Tag, TagType};
 
@@ -64,8 +65,14 @@ pub fn write_tagged_wav(path: &Path, seconds: f32, meta: &Meta) {
     if let Some(track) = meta.track {
         tag.insert_text(ItemKey::TrackNumber, track.to_string());
     }
+    // The MusicBrainz recording id is an ID3v2 UFID frame (binary), not a text frame, so
+    // `insert_text` would drop it. Write it through the concrete ID3v2 tag.
     if let Some(id) = meta.mb_recording_id {
-        tag.insert_text(ItemKey::MusicBrainzRecordingId, id.into());
+        let mut id3 = Id3v2Tag::from(tag);
+        let ufid = UniqueFileIdentifierFrame::new("http://musicbrainz.org".to_string(), id.as_bytes().to_vec());
+        id3.insert(Frame::UniqueFileIdentifier(ufid));
+        id3.save_to_path(path, WriteOptions::default()).unwrap();
+    } else {
+        tag.save_to_path(path, WriteOptions::default()).unwrap();
     }
-    tag.save_to_path(path, WriteOptions::default()).unwrap();
 }
