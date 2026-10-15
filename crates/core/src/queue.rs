@@ -3,6 +3,7 @@
 
 use std::collections::VecDeque;
 
+use rand::seq::SliceRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -91,9 +92,61 @@ impl Queue {
         self.current
     }
 
-    /// Play order for the context, starting from `anchor` when shuffling.
-    fn build_order(&self, _anchor: usize, _rng: &mut impl Rng) -> Vec<usize> {
-        (0..self.context.len()).collect()
+    /// Play order for the context. Natural order; with shuffle, `anchor` first and the
+    /// rest in random order.
+    fn build_order(&self, anchor: usize, rng: &mut impl Rng) -> Vec<usize> {
+        if !self.shuffle {
+            return (0..self.context.len()).collect();
+        }
+        let mut rest: Vec<usize> = (0..self.context.len()).filter(|&i| i != anchor).collect();
+        rest.shuffle(rng);
+        std::iter::once(anchor).chain(rest).collect()
+    }
+
+    /// Turns shuffle on/off keeping the current context track in place.
+    pub fn set_shuffle(&mut self, on: bool, rng: &mut impl Rng) {
+        if on == self.shuffle {
+            return;
+        }
+        self.shuffle = on;
+        let Some(anchor) = self.cursor.map(|c| self.order[c]) else {
+            return;
+        };
+        self.order = self.build_order(anchor, rng);
+        self.cursor = self.order.iter().position(|&i| i == anchor);
+    }
+
+    pub fn queue_add(&mut self, tracks: &[TrackId]) {
+        self.user_queue.extend(tracks.iter().copied());
+    }
+
+    pub fn queue_remove(&mut self, index: usize) -> Option<TrackId> {
+        self.user_queue.remove(index)
+    }
+
+    /// Moves a user-queue entry; `false` if either index is out of range.
+    pub fn queue_move(&mut self, from: usize, to: usize) -> bool {
+        if from >= self.user_queue.len() || to >= self.user_queue.len() {
+            return false;
+        }
+        let track = self.user_queue.remove(from).expect("index checked");
+        self.user_queue.insert(to, track);
+        true
+    }
+
+    pub fn user_queue(&self) -> Vec<TrackId> {
+        self.user_queue.iter().copied().collect()
+    }
+
+    /// What plays next: the user queue, then the rest of the context in play order.
+    pub fn upcoming(&self, limit: usize) -> Vec<TrackId> {
+        let from = self.cursor.map_or(0, |c| c + 1);
+        self.user_queue
+            .iter()
+            .copied()
+            .chain(self.order.iter().skip(from).map(|&i| self.context[i]))
+            .take(limit)
+            .collect()
     }
 
     /// Manual "next": always moves on, even with repeat-one.
