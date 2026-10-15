@@ -177,3 +177,55 @@ fn removing_a_folder_removes_its_tracks() {
     assert_eq!(count(&db, "SELECT count(*) FROM tracks"), 0);
     assert_eq!(count(&db, "SELECT count(*) FROM tracks_fts"), 0);
 }
+
+// A scan that could not enumerate a folder (external disk asleep, NFS timeout, permissions)
+// must NOT delete the tracks it failed to see, or their playlist membership and likes vanish
+// via ON DELETE CASCADE. Removals only happen on a clean scan.
+#[cfg(unix)]
+#[test]
+fn enumeration_error_does_not_delete_known_tracks() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let album = dir.path().join("album");
+    write_tagged_wav(&album.join("01.wav"), 0.3, &Meta::new("Keeper", "X"));
+    let (mut db, events) = library(dir.path());
+    scanner::scan(&mut db, &events).unwrap();
+    let track_id = count(&db, "SELECT id FROM tracks");
+    db.conn()
+        .execute("INSERT INTO likes (track_id, liked_at) VALUES (?1, 1)", [track_id])
+        .unwrap();
+
+    // make the subfolder unreadable so WalkDir yields an error for it
+    std::fs::set_permissions(&album, std::fs::Permissions::from_mode(0o000)).unwrap();
+    let report = scanner::scan(&mut db, &events).unwrap();
+    std::fs::set_permissions(&album, std::fs::Permissions::from_mode(0o755)).unwrap(); // restore so tempdir cleans up
+
+    assert!(!report.errors.is_empty(), "enumeration error should be reported");
+    assert_eq!(report.removed, 0, "an unreadable folder must not trigger deletions");
+    assert_eq!(count(&db, "SELECT count(*) FROM tracks"), 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM likes"), 1);
+}
+
+// A file moved A->B whose destination can't be read in this scan (half-copied, locked) must
+// not delete the original: the removal waits for a scan with no errors.
+#[test]
+fn move_with_unreadable_destination_keeps_original() {
+    let dir = tempfile::tempdir().unwrap();
+    let old = dir.path().join("a.wav");
+    write_tagged_wav(&old, 0.3, &Meta::new("Song", "Artist"));
+    let (mut db, events) = library(dir.path());
+    scanner::scan(&mut db, &events).unwrap();
+    let track_id = count(&db, "SELECT id FROM tracks");
+    db.conn()
+        .execute("INSERT INTO likes (track_id, liked_at) VALUES (?1, 1)", [track_id])
+        .unwrap();
+
+    std::fs::remove_file(&old).unwrap();
+    std::fs::write(dir.path().join("b.wav"), b"half-copied, not yet valid audio").unwrap();
+    let report = scanner::scan(&mut db, &events).unwrap();
+
+    assert_eq!(report.errors.len(), 1);
+    assert_eq!(report.removed, 0, "a read error must not delete the move source");
+    assert_eq!(count(&db, "SELECT count(*) FROM tracks"), 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM likes"), 1);
+}

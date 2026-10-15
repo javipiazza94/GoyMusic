@@ -109,9 +109,16 @@ pub fn scan(db: &mut Db, events: &EventBus) -> Result<ScanReport> {
             });
         }
     }
-    let removed: Vec<i64> = missing.iter().map(|m| m.id).collect();
-    maintenance::delete_tracks(&tx, &removed)?;
-    report.removed = removed.len();
+    // Only delete tracks whose absence we are sure of. An error this scan (a folder we could
+    // not enumerate, or a move destination we could not read) can hide a file that is really
+    // still there, and `tracks` cascades to `playlist_items` and `likes` — so a transient
+    // failure would permanently destroy user curation. When any error occurred, defer removals
+    // to a later clean scan.
+    if report.errors.is_empty() {
+        let removed: Vec<i64> = missing.iter().map(|m| m.id).collect();
+        maintenance::delete_tracks(&tx, &removed)?;
+        report.removed = removed.len();
+    }
     maintenance::cleanup_orphans(&tx)?;
     tx.commit()?;
 
