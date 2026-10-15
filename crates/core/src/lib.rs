@@ -2,5 +2,6 @@
 
 pub mod ids;
 pub mod model;
+pub mod queue;
 
 pub use ids::*;

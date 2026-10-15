@@ -10,11 +10,4 @@ macro_rules! id_types {
     };
 }
 
-id_types!(
-    TrackId,
-    AlbumId,
-    ArtistId,
-    PlaylistId,
-    PlaylistFolderId,
-    FolderId
-);
+id_types!(TrackId, AlbumId, ArtistId, PlaylistId, PlaylistFolderId, FolderId);
