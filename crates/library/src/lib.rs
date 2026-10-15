@@ -3,6 +3,7 @@
 pub mod db;
 pub mod error;
 pub mod folders;
+pub mod scanner;
 pub mod tags;
 
 mod maintenance;
