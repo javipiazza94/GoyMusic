@@ -1,0 +1,22 @@
+[package]
+name = "goymusic-library"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+deunicode.workspace = true
+goymusic-core = { path = "../core" }
+lofty.workspace = true
+rand.workspace = true
+rayon.workspace = true
+rusqlite.workspace = true
+rusqlite_migration.workspace = true
+serde_json.workspace = true
+strsim.workspace = true
+thiserror.workspace = true
+walkdir.workspace = true
+
+[dev-dependencies]
+hound.workspace = true
+tempfile.workspace = true
