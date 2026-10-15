@@ -1,0 +1,10 @@
+.env
+.env.*
+credentials.json
+*.pem
+.claude/settings.local.json
+temp/
+__pycache__/
+node_modules/
+target/
+dist/
