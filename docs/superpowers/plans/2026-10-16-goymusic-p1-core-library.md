@@ -2948,7 +2948,8 @@ pub fn export(db: &Db, id: PlaylistId, path: &Path) -> Result<()> {
     let mut out = String::from("#EXTM3U\n");
     for item in playlists::items(db, id)? {
         let track = &item.track;
-        let _ = writeln!(out, "#EXTINF:{},{} - {}", track.duration_ms / 1000, track.artists.join(", "), track.title);
+        let seconds = (track.duration_ms + 500) / 1000; // rounded: 999 ms is "1", not "0"
+        let _ = writeln!(out, "#EXTINF:{seconds},{} - {}", track.artists.join(", "), track.title);
         let _ = writeln!(out, "{}", track.path);
     }
     std::fs::write(path, out)?;
