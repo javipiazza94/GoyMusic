@@ -3,6 +3,7 @@
 pub mod db;
 pub mod error;
 pub mod folders;
+pub mod m3u;
 pub mod playlists;
 pub mod queries;
 pub mod scanner;
