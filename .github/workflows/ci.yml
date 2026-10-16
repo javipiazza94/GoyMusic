@@ -10,7 +10,7 @@ jobs:
           components: rustfmt, clippy
       - run: >-
           sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config ffmpeg
-          libwebkit2gtk-4.1-dev libsoup-3.0-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev
+          libwebkit2gtk-4.1-dev libsoup-3.0-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev dbus
       - uses: pnpm/action-setup@v4
         with:
           version: 11
@@ -25,5 +25,34 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
       - run: cargo test -p goymusic-audio --test mp3_gapless -- --ignored
+      # MPRIS on a real, isolated session bus
+      - run: dbus-run-session -- cargo test -p goymusic-desktop -- --ignored
       - run: pnpm --dir ui test
       - run: cargo build -p goymusic-desktop
+
+  bundle:
+    # installable packages (spec §10.8), only for what lands on master
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: rust
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: >-
+          sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
+          libwebkit2gtk-4.1-dev libsoup-3.0-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tauri build --bundles deb appimage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goymusic-linux
+          path: |
+            target/release/bundle/deb/*.deb
+            target/release/bundle/appimage/*.AppImage

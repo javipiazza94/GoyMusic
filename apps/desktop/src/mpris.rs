@@ -18,8 +18,8 @@ use mpris_server::{LoopStatus, Metadata, PlaybackStatus, Player, Time, TrackId a
 use crate::control::SharedControl;
 
 pub const BUS_NAME_SUFFIX: &str = "goymusic";
-/// Basename of the installed `.desktop` file (without the extension).
-pub const DESKTOP_ENTRY: &str = "goymusic";
+/// Basename of the `.desktop` file the bundler installs (`GoyMusic.desktop`), without the extension.
+pub const DESKTOP_ENTRY: &str = "GoyMusic";
 
 /// What MPRIS can ask of the app window.
 pub struct MprisHooks {

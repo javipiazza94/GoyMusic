@@ -56,6 +56,8 @@ fn playerctl_style_clients_see_and_drive_the_player() {
         player.call_method("Next", &()).await.unwrap();
         let root = Proxy::new(&conn, DEST, PATH, "org.mpris.MediaPlayer2").await.unwrap();
         assert_eq!(root.get_property::<String>("Identity").await.unwrap(), "GoyMusic");
+        // must match the installed GoyMusic.desktop, or GNOME cannot tie the controls to the app
+        assert_eq!(root.get_property::<String>("DesktopEntry").await.unwrap(), "GoyMusic");
         root.call_method("Raise", &()).await.unwrap();
     });
     let deadline = Instant::now() + Duration::from_secs(5);
