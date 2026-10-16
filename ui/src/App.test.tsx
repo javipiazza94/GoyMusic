@@ -7,10 +7,6 @@ import { formatMs } from "./core/queries";
 import { usePlayer } from "./core/player-store";
 import { ok, track } from "./test/fixtures";
 
-vi.mock("./bindings", () => ({
-  commands: { albums: vi.fn(), tracks: vi.fn(), removeFolder: vi.fn(), folders: vi.fn(), play: vi.fn(), addFolder: vi.fn(), previous: vi.fn(), next: vi.fn() },
-}));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 
 beforeEach(() => {
   vi.mocked(commands.albums).mockResolvedValue(
