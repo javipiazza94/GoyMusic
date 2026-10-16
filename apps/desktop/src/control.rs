@@ -81,6 +81,21 @@ pub mod fake {
         pub calls: Mutex<Vec<String>>,
     }
 
+    /// A stopped player with nothing loaded.
+    pub fn empty_view() -> PlayerView {
+        PlayerView {
+            state: PlaybackState::Idle,
+            track: None,
+            position_ms: 0,
+            volume: 1.0,
+            replaygain: false,
+            shuffle: false,
+            repeat: RepeatMode::Off,
+            user_queue: vec![],
+            up_next: vec![],
+        }
+    }
+
     impl RecordingControl {
         pub fn with_view(view: PlayerView) -> Self {
             Self {

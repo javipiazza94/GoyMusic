@@ -20,6 +20,7 @@ goymusic-core = { path = "../../crates/core", features = ["specta"] }
 goymusic-library = { path = "../../crates/library", features = ["specta"] }
 goymusic-services = { path = "../../crates/services", features = ["specta"] }
 mpris-server.workspace = true
+notify-rust.workspace = true
 serde.workspace = true
 specta.workspace = true
 specta-typescript.workspace = true

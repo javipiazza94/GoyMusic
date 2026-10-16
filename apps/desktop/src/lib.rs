@@ -7,6 +7,7 @@ pub mod control;
 mod forward;
 mod logging;
 pub mod mpris;
+mod notify;
 mod window;
 
 use std::path::Path;
@@ -119,6 +120,15 @@ pub fn run() {
                     raise: Box::new(move || window::show_main(&raise_app)),
                     quit: Box::new(move || quit_app.exit(0)),
                 },
+            );
+            let focus_app = app.handle().clone();
+            notify::spawn(
+                notify::TrackNotifications::new(
+                    notify::DesktopNotifier::default(),
+                    forward_services.clone(),
+                    Arc::new(move || window::main_is_focused(&focus_app)),
+                ),
+                forward_services.events().subscribe(),
             );
             Ok(())
         })

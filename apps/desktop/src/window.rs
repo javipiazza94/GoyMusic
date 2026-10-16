@@ -11,3 +11,10 @@ pub fn show_main(app: &AppHandle) {
     let _ = window.unminimize();
     let _ = window.set_focus();
 }
+
+/// Whether the main window is in front of the user (false if it cannot be told).
+pub fn main_is_focused(app: &AppHandle) -> bool {
+    app.get_webview_window("main")
+        .and_then(|w| w.is_focused().ok())
+        .unwrap_or(false)
+}

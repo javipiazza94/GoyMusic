@@ -19,6 +19,7 @@ image = { version = "=0.25.10", default-features = false, features = ["png", "jp
 lofty = "0.21"
 mpris-server = "=0.10.0"
 notify = "=8.2.0"
+notify-rust = { version = "=4.18.1", default-features = false, features = ["z"] }
 rand = "0.8"
 rayon = "1"
 ringbuf = "=0.4.8"
