@@ -4,7 +4,8 @@ import { useNavigate, useParams } from "react-router";
 import { commands, type Playlist } from "../bindings";
 import { playFrom } from "../core/play";
 import { usePlaylist, usePlaylistFolders } from "../core/queries";
-import { isNotFound, runCommand, unwrap } from "../core/result";
+import { isNotFound, unwrap } from "../core/result";
+import { reportError, runCommand } from "../core/report";
 import { TrackList } from "../tracks/TrackList";
 import { ConfirmInline } from "./ConfirmInline";
 import { countLabel, totalDuration } from "./format";
@@ -12,7 +13,7 @@ import { NotFound } from "./NotFound";
 import { PlayButton, ViewHeader } from "./ViewHeader";
 import styles from "./views.module.css";
 
-const fail = (e: unknown) => console.error(e);
+const fail = reportError;
 
 function RenameField({ playlist, onDone }: { playlist: Playlist; onDone(): void }) {
   const [name, setName] = useState(playlist.name);

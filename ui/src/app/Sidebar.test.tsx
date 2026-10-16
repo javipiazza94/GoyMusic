@@ -1,7 +1,6 @@
 import { screen, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { open } from "@tauri-apps/plugin-dialog";
-import { vi } from "vitest";
 import { commands } from "../bindings";
 import { ok } from "../test/fixtures";
 import { renderAt } from "../test/render";
@@ -30,7 +29,7 @@ test("creates a playlist and opens it", async () => {
   const { user, path } = renderAt("/");
   await user.click(screen.getByRole("button", { name: "Nueva playlist" }));
   expect(commands.createPlaylist).toHaveBeenCalledWith("Nueva playlist");
-  expect(path()).toBe("/playlist/9");
+  await vi.waitFor(() => expect(path()).toBe("/playlist/9"));
 });
 
 test("creates a playlist folder", async () => {
@@ -45,5 +44,5 @@ test("imports an M3U8 file and opens the playlist", async () => {
   const { user, path } = renderAt("/");
   await user.click(screen.getByRole("button", { name: "Importar M3U8" }));
   expect(commands.importM3u).toHaveBeenCalledWith("/tmp/lista.m3u8");
-  expect(path()).toBe("/playlist/5");
+  await vi.waitFor(() => expect(path()).toBe("/playlist/5"));
 });

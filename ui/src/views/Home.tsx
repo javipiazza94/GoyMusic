@@ -7,6 +7,7 @@ import { addFolderFromDialog } from "../library/add-folder";
 import { AlbumGrid } from "../library/AlbumGrid";
 import { TrackList } from "../tracks/TrackList";
 import styles from "./views.module.css";
+import { reportError } from "../core/report";
 
 type Tab = "songs" | "albums" | "artists";
 const TAB_KEY = "goymusic.homeTab";
@@ -95,7 +96,7 @@ export function Home() {
         <div className={styles.empty}>
           <h2 className={styles.emptyTitle}>Tu biblioteca está vacía</h2>
           <p>Añade la carpeta donde guardas tu música. GoyMusic la escanea y vigila los cambios.</p>
-          <button type="button" className={styles.playButton} onClick={() => void addFolderFromDialog().catch(console.error)}>
+          <button type="button" className={styles.playButton} onClick={() => void addFolderFromDialog().catch(reportError)}>
             Añadir carpeta
           </button>
         </div>

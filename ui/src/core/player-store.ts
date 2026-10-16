@@ -2,19 +2,23 @@ import { create } from "zustand";
 import { commands, type PlayerView } from "../bindings";
 import { unwrap } from "./result";
 
-export type Notice = { id: number; kind: "playbackError" | "deviceLost"; message: string };
+export type Notice = { id: number; kind: "playbackError" | "deviceLost" | "error" | "info"; message: string };
 
 export interface PlayerStore {
   view: PlayerView | null;
   positionMs: number;
   scan: { done: number; total: number } | null;
   notices: Notice[];
+  /** A serious failure shown in the error panel until dismissed. */
+  grave: string | null;
   refresh(): Promise<void>;
   setPosition(trackId: number, ms: number): void;
   setScan(done: number, total: number): void;
   clearScan(): void;
   notify(kind: Notice["kind"], message: string): void;
   dismiss(id: number): void;
+  setGrave(message: string): void;
+  clearGrave(): void;
   setVolume(volume: number): Promise<void>;
   togglePlay(): Promise<void>;
 }
@@ -29,6 +33,7 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   positionMs: 0,
   scan: null,
   notices: [],
+  grave: null,
   async refresh() {
     const request = ++latestRefresh;
     const view = unwrap(await commands.playerView());
@@ -48,6 +53,12 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   },
   dismiss(id) {
     set((s) => ({ notices: s.notices.filter((n) => n.id !== id) }));
+  },
+  setGrave(message) {
+    set({ grave: message });
+  },
+  clearGrave() {
+    set({ grave: null });
   },
   async setVolume(volume) {
     const view = get().view;

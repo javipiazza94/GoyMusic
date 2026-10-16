@@ -3,7 +3,7 @@ import { commands, type Track } from "../bindings";
 import { Icon } from "../components/Icon";
 import { usePlayer } from "../core/player-store";
 import { formatMs } from "../core/queries";
-import { runCommand } from "../core/result";
+import { runCommand } from "../core/report";
 import { carriesTracks, readDrag, writeDrag } from "../dnd/drag";
 import { Cover } from "../library/Cover";
 import styles from "./QueuePanel.module.css";

@@ -1,7 +1,7 @@
 import { Link } from "react-router";
-import { commands, type Album } from "../bindings";
+import type { Album } from "../bindings";
 import { Icon } from "../components/Icon";
-import { unwrap } from "../core/result";
+import { playFrom } from "../core/play";
 import { Cover } from "./Cover";
 import styles from "./AlbumGrid.module.css";
 
@@ -18,7 +18,7 @@ export function AlbumGrid({ albums, row = false }: { albums: Album[]; row?: bool
               type="button"
               className={styles.play}
               aria-label={`Reproducir ${album.title}`}
-              onClick={() => void commands.play({ kind: "album", id: album.id }, 0).then(unwrap).catch(console.error)}
+              onClick={() => playFrom({ kind: "album", id: album.id }, 0)}
             >
               <Icon name="play" size={18} />
             </button>

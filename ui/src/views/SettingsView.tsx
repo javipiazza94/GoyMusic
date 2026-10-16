@@ -6,6 +6,7 @@ import { unwrap } from "../core/result";
 import { useTheme, type ThemePref } from "../core/theme";
 import { addFolderFromDialog } from "../library/add-folder";
 import styles from "./views.module.css";
+import { reportError } from "../core/report";
 
 const themes: Array<{ id: ThemePref; label: string }> = [
   { id: "system", label: "Sistema" },
@@ -13,7 +14,7 @@ const themes: Array<{ id: ThemePref; label: string }> = [
   { id: "light", label: "Claro" },
 ];
 
-const fail = (e: unknown) => console.error(e);
+const fail = reportError;
 
 export function SettingsView() {
   const folders = useFolders().data ?? [];

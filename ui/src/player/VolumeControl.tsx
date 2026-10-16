@@ -2,13 +2,14 @@ import { useRef, type CSSProperties } from "react";
 import { Icon } from "../components/Icon";
 import { usePlayer } from "../core/player-store";
 import styles from "./PlayerBar.module.css";
+import { reportError } from "../core/report";
 
 export function VolumeControl() {
   const volume = usePlayer((s) => s.view?.volume ?? 1);
   const setVolume = usePlayer((s) => s.setVolume);
   const beforeMute = useRef(1);
   const muted = volume === 0;
-  const change = (v: number) => void setVolume(v).catch(console.error);
+  const change = (v: number) => void setVolume(v).catch(reportError);
 
   function toggleMute() {
     if (muted) change(beforeMute.current || 1);

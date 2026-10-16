@@ -1,5 +1,6 @@
 import { commands, type Playlist, type Track } from "../bindings";
-import { runCommand, unwrap } from "../core/result";
+import { unwrap } from "../core/result";
+import { reportError, runCommand } from "../core/report";
 import type { MenuItem } from "../menu/menu-store";
 
 
@@ -34,7 +35,7 @@ export function trackMenu(tracks: Track[], deps: TrackMenuDeps): MenuItem[] {
                 unwrap(await commands.addToPlaylist(p.id, ids));
                 deps.navigate(`/playlist/${p.id}`);
               })
-              .catch(console.error),
+              .catch(reportError),
         },
         ...deps.playlists.map((p) => ({ label: p.name, onSelect: () => runCommand(commands.addToPlaylist(p.id, ids)) })),
       ],

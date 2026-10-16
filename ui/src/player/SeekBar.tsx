@@ -2,8 +2,8 @@ import { useState, type CSSProperties } from "react";
 import { commands } from "../bindings";
 import { usePlayer } from "../core/player-store";
 import { formatMs } from "../core/queries";
-import { unwrap } from "../core/result";
 import styles from "./PlayerBar.module.css";
+import { runCommand } from "../core/report";
 
 /** Progress "filament": shows the position, and seeks once per gesture (when the drag or key press ends). */
 export function SeekBar({ durationMs, disabled }: { durationMs: number; disabled: boolean }) {
@@ -16,7 +16,7 @@ export function SeekBar({ durationMs, disabled }: { durationMs: number; disabled
     if (dragMs === null) return;
     usePlayer.setState({ positionMs: dragMs });
     setDragMs(null);
-    void commands.seek(dragMs).then(unwrap).catch(console.error);
+    runCommand(commands.seek(dragMs));
   }
 
   return (

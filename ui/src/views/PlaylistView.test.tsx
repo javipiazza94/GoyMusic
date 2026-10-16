@@ -43,7 +43,7 @@ test("deleting asks first and then goes home", async () => {
   expect(screen.getByText(/¿Eliminar «Mix»\?/)).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Eliminar playlist" }));
   expect(commands.deletePlaylist).toHaveBeenCalledWith(3);
-  expect(path()).toBe("/");
+  await vi.waitFor(() => expect(path()).toBe("/"));
 });
 
 test("cancelling the deletion keeps the playlist", async () => {

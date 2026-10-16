@@ -13,6 +13,7 @@ import { useMenu, type MenuItem } from "../menu/menu-store";
 import { trackMenu } from "./track-menu";
 import { emptySelection, nextSelection, type Selection } from "./selection";
 import styles from "./TrackList.module.css";
+import { reportError } from "../core/report";
 
 /** One row: `position` is the item's place in a playlist (used to remove or reorder it). */
 export type TrackRow = { track: Track; key: string; position?: number };
@@ -257,7 +258,7 @@ export function TrackList(props: TrackListProps) {
                   aria-pressed={isLiked}
                   onClick={(e) => {
                     e.stopPropagation();
-                    void toggleLike(track.id, isLiked).catch(console.error);
+                    void toggleLike(track.id, isLiked).catch(reportError);
                   }}
                 >
                   <Icon name={isLiked ? "heartFilled" : "heart"} size={16} />

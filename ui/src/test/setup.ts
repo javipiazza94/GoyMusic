@@ -27,7 +27,7 @@ beforeEach(() => {
   localStorage.clear();
   delete document.documentElement.dataset.theme;
   useUi.setState({ queueOpen: false });
-  usePlayer.setState({ ...initialPlayer, view: null, positionMs: 0, scan: null, notices: [] }, true);
+  usePlayer.setState({ ...initialPlayer, view: null, positionMs: 0, scan: null, notices: [], grave: null }, true);
 });
 
 afterEach(cleanup);

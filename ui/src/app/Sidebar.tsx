@@ -3,9 +3,11 @@ import { NavLink, useNavigate } from "react-router";
 import { commands, type Playlist } from "../bindings";
 import { Icon, type IconName } from "../components/Icon";
 import { useLikedIds } from "../core/likes";
+import { usePlayer } from "../core/player-store";
 import { usePlaylistFolders, usePlaylists } from "../core/queries";
 import { dropTarget } from "../dnd/drag";
-import { runCommand, unwrap } from "../core/result";
+import { unwrap } from "../core/result";
+import { reportError, runCommand } from "../core/report";
 import styles from "./Sidebar.module.css";
 
 const NEW_PLAYLIST = "Nueva playlist";
@@ -43,7 +45,7 @@ function ActionButton({ label, icon, onClick }: { label: string; icon: IconName;
       className={styles.iconButton}
       aria-label={label}
       title={label}
-      onClick={() => void onClick().catch(console.error)}
+      onClick={() => void onClick().catch(reportError)}
     >
       <Icon name={icon} size={18} />
     </button>
@@ -70,7 +72,10 @@ export function Sidebar() {
     const path = await open({ filters: [{ name: "M3U8", extensions: ["m3u8", "m3u"] }] });
     if (typeof path !== "string") return;
     const report = unwrap(await commands.importM3u(path));
-    if (report.missing.length > 0) console.warn(`${report.missing.length} entradas no están en la biblioteca`);
+    if (report.missing.length > 0) {
+      const n = report.missing.length;
+      usePlayer.getState().notify("info", `${n} ${n === 1 ? "canción de la lista no está" : "canciones de la lista no están"} en tu biblioteca`);
+    }
     navigate(`/playlist/${report.playlist.id}`);
   }
 

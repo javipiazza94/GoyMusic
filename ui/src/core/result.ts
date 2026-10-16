@@ -8,7 +8,7 @@ export class CommandError extends Error {
   }
 }
 
-type CommandResult<T> = { status: "ok"; data: T } | { status: "error"; error: ServiceError };
+export type CommandResult<T> = { status: "ok"; data: T } | { status: "error"; error: ServiceError };
 
 export function unwrap<T>(result: CommandResult<T>): T {
   if (result.status === "error") throw new CommandError(result.error);
@@ -16,7 +16,3 @@ export function unwrap<T>(result: CommandResult<T>): T {
 }
 
 export const isNotFound = (e: unknown): boolean => e instanceof CommandError && e.error.code === "notFound";
-
-/** Fires a command whose effect arrives through the core's events; failures are logged. */
-export const runCommand = (call: Promise<CommandResult<unknown>>): void =>
-  void call.then(unwrap).catch(console.error);

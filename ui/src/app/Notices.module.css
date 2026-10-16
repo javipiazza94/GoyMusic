@@ -1,0 +1,100 @@
+.stack {
+  position: fixed;
+  right: var(--space-md);
+  bottom: calc(var(--player-h) + var(--space-md));
+  z-index: 40;
+  display: grid;
+  gap: var(--space-xs);
+  width: min(24rem, calc(100vw - 2 * var(--space-md)));
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-sm) var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-paper-3);
+  box-shadow: 0 16px 40px -20px var(--color-shadow);
+  animation: appear var(--dur-base) var(--ease-out);
+}
+
+.toast[data-kind="deviceLost"],
+.toast[data-kind="error"],
+.toast[data-kind="playbackError"] {
+  box-shadow:
+    inset 3px 0 0 var(--color-accent-2),
+    0 16px 40px -20px var(--color-shadow);
+}
+
+.message {
+  flex: 1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink-3);
+}
+
+.close:hover {
+  color: var(--color-ink);
+  background: var(--color-paper-2);
+}
+
+.grave {
+  position: fixed;
+  top: var(--space-md);
+  left: calc(var(--sidebar-w) + var(--space-xl));
+  right: var(--space-xl);
+  z-index: 45;
+  display: grid;
+  gap: var(--space-xs);
+  justify-items: start;
+  max-width: 40rem;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  background: var(--color-paper-3);
+  box-shadow:
+    inset 0 3px 0 var(--color-accent-2),
+    0 24px 60px -24px var(--color-shadow);
+  animation: appear var(--dur-base) var(--ease-out);
+}
+
+.graveTitle {
+  font: 600 var(--text-md) / 1.2 var(--font-body);
+  color: var(--color-accent-2);
+}
+
+.hint {
+  margin: 0;
+  font: var(--text-xs) / 1.4 var(--font-mono);
+  color: var(--color-ink-3);
+}
+
+.graveClose {
+  min-height: 32px;
+  padding: 0 var(--space-md);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+}
+
+.graveClose:hover {
+  background: var(--color-rule);
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}

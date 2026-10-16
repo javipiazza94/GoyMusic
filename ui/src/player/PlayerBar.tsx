@@ -4,7 +4,7 @@ import { Icon } from "../components/Icon";
 import { useArtistIndex } from "../core/artist-index";
 import { useLikedIds, useToggleLike } from "../core/likes";
 import { usePlayer } from "../core/player-store";
-import { runCommand } from "../core/result";
+import { reportError, runCommand } from "../core/report";
 import { useUi } from "../app/ui-store";
 import { Cover } from "../library/Cover";
 import styles from "./PlayerBar.module.css";
@@ -59,7 +59,7 @@ function NowPlaying({ track }: { track: Track | null }) {
         data-liked={isLiked || undefined}
         aria-label="Me gusta"
         aria-pressed={isLiked}
-        onClick={() => void toggleLike(track.id, isLiked).catch(console.error)}
+        onClick={() => void toggleLike(track.id, isLiked).catch(reportError)}
       >
         <Icon name={isLiked ? "heartFilled" : "heart"} />
       </button>
@@ -100,7 +100,7 @@ export function PlayerBar() {
             className={styles.play}
             aria-label={playing ? "Pausa" : "Reproducir"}
             disabled={empty}
-            onClick={() => void togglePlay().catch(console.error)}
+            onClick={() => void togglePlay().catch(reportError)}
           >
             <Icon name={playing ? "pause" : "play"} size={22} />
           </button>
