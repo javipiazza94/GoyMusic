@@ -2,6 +2,7 @@
 
 pub mod convert;
 pub mod decoder;
+pub mod engine;
 pub mod error;
 pub mod gain;
 pub mod sink;

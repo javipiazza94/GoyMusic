@@ -59,3 +59,121 @@ pub fn write_flac(path: &Path, rate: u32, channels: u16, samples: &[i16]) {
 pub fn to_i16(samples: &[f32]) -> Vec<i16> {
     samples.iter().map(|&s| (s * 32768.0).round() as i16).collect()
 }
+
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::Receiver;
+use std::sync::{Arc, Mutex};
+
+use goymusic_audio::engine::Engine;
+use goymusic_audio::sink::{AudioSink, CaptureHandle, CaptureSink, SinkError, SinkFactory, SinkFormat};
+use goymusic_core::events::{Event, EventBus, PlaybackState};
+use goymusic_core::TrackId;
+
+/// An engine over capture sinks. Every sink the factory opens is kept in `sinks`.
+pub struct Rig {
+    pub engine: Engine,
+    pub events: Receiver<Event>,
+    pub sinks: Arc<Mutex<Vec<CaptureHandle>>>,
+    pub factory_fails: Arc<AtomicBool>,
+    pub format: SinkFormat,
+}
+
+pub fn capture_factory(format: SinkFormat) -> (SinkFactory, Arc<Mutex<Vec<CaptureHandle>>>, Arc<AtomicBool>) {
+    let sinks = Arc::new(Mutex::new(Vec::new()));
+    let fails = Arc::new(AtomicBool::new(false));
+    let (s, f) = (sinks.clone(), fails.clone());
+    let factory: SinkFactory = Box::new(move || {
+        if f.load(Ordering::SeqCst) {
+            return Err(SinkError::NoDevice);
+        }
+        let (sink, handle) = CaptureSink::new(format);
+        s.lock().unwrap().push(handle);
+        Ok(Box::new(sink) as Box<dyn AudioSink>)
+    });
+    (factory, sinks, fails)
+}
+
+pub fn resolver(files: &[(i64, PathBuf)]) -> goymusic_audio::engine::Resolver {
+    let map: HashMap<TrackId, PathBuf> = files.iter().map(|(id, p)| (TrackId(*id), p.clone())).collect();
+    Box::new(move |id| map.get(&id).cloned())
+}
+
+impl Rig {
+    pub fn new(format: SinkFormat, files: &[(i64, PathBuf)]) -> Self {
+        let bus = Arc::new(EventBus::new());
+        let events = bus.subscribe();
+        let (factory, sinks, factory_fails) = capture_factory(format);
+        let engine = Engine::new(factory, resolver(files), bus);
+        Self {
+            engine,
+            events,
+            sinks,
+            factory_fails,
+            format,
+        }
+    }
+
+    pub fn sink(&self, i: usize) -> CaptureHandle {
+        self.sinks.lock().unwrap()[i].clone()
+    }
+
+    /// Pumps until playback stops (ended, idle, paused) or `max` pumps.
+    pub fn run(&mut self, max: usize) {
+        for _ in 0..max {
+            self.engine.pump();
+            if self.engine.state() != PlaybackState::Playing {
+                return;
+            }
+        }
+    }
+
+    /// Lets a held sink play `frames` frames, pumping in between like the real thread does.
+    pub fn advance(&mut self, sink: usize, frames: usize) {
+        let handle = self.sink(sink);
+        let channels = self.format.channels as usize;
+        let mut left = frames;
+        while left > 0 {
+            self.engine.pump();
+            let step = left.min(400);
+            handle.play(step, channels);
+            left -= step;
+        }
+    }
+
+    pub fn drain_events(&self) -> Vec<Event> {
+        self.events.try_iter().collect()
+    }
+}
+
+/// Tracks announced as audible, in order, without consecutive repeats.
+pub fn heard(events: &[Event]) -> Vec<i64> {
+    let mut out: Vec<i64> = Vec::new();
+    for e in events {
+        if let Event::PlayerStateChanged {
+            state: PlaybackState::Playing,
+            track: Some(t),
+        } = e
+        {
+            if out.last() != Some(&t.0) {
+                out.push(t.0);
+            }
+        }
+    }
+    out
+}
+
+/// Longest run of samples (per channel 0) below `threshold` in absolute value.
+pub fn longest_quiet_run(interleaved: &[f32], channels: usize, threshold: f32) -> usize {
+    let (mut best, mut run) = (0, 0);
+    for frame in interleaved.chunks_exact(channels) {
+        if frame[0].abs() < threshold {
+            run += 1;
+            best = best.max(run);
+        } else {
+            run = 0;
+        }
+    }
+    best
+}
