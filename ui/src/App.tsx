@@ -25,7 +25,12 @@ export default function App() {
         <h2>Carpetas</h2>
         <ul>
           {folders.data?.map((f) => (
-            <li key={f.id}>{f.path}</li>
+            <li key={f.id}>
+              {f.path}{" "}
+              <button aria-label={`Quitar ${f.path}`} onClick={() => void commands.removeFolder(f.id)}>
+                Quitar
+              </button>
+            </li>
           ))}
         </ul>
         <button onClick={() => void addFolder()}>Añadir carpeta</button>

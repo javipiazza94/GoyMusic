@@ -8,7 +8,7 @@ import { usePlayer } from "./core/player-store";
 import { ok, track } from "./test/fixtures";
 
 vi.mock("./bindings", () => ({
-  commands: { albums: vi.fn(), tracks: vi.fn(), folders: vi.fn(), play: vi.fn(), addFolder: vi.fn(), previous: vi.fn(), next: vi.fn() },
+  commands: { albums: vi.fn(), tracks: vi.fn(), removeFolder: vi.fn(), folders: vi.fn(), play: vi.fn(), addFolder: vi.fn(), previous: vi.fn(), next: vi.fn() },
 }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 
@@ -43,6 +43,13 @@ test("lists every song, also those without an album, and plays from the clicked 
   fireEvent.click(await screen.findByRole("button", { name: /Clarity/ }));
   expect(commands.tracks).toHaveBeenCalledWith("title", 0, 500);
   expect(commands.play).toHaveBeenCalledWith({ kind: "tracks", id: [5, 9] }, 1);
+});
+
+test("removes a library folder", async () => {
+  vi.mocked(commands.removeFolder).mockResolvedValue(ok(null));
+  renderApp();
+  fireEvent.click(await screen.findByRole("button", { name: "Quitar /home/javi/Música" }));
+  expect(commands.removeFolder).toHaveBeenCalledWith(1);
 });
 
 test("shows scan progress while scanning", async () => {
