@@ -17,7 +17,7 @@
   --color-glow: oklch(80% 0.16 50 / 0.42);
   --color-bloom: oklch(76% 0.17 50 / 0.08);
   --color-focus: var(--color-accent);
-  --color-shadow: oklch(0% 0 0 / 0.55);
+  --color-shadow: oklch(6% 0.02 265 / 0.6);
 
   --font-display: "Instrument Serif", Georgia, serif;
   --font-body: "Geist Variable", system-ui, sans-serif;

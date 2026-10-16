@@ -23,6 +23,8 @@
   font: var(--text-xl) / 1.1 var(--font-display);
   font-weight: 400;
   color: var(--color-ink);
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .emptyLink {
@@ -323,7 +325,7 @@
 
 .segmented {
   display: inline-flex;
-  padding: 3px;
+  padding: var(--space-2xs);
   border-radius: var(--radius-pill);
   background: var(--color-paper-2);
 }
@@ -501,4 +503,28 @@
 .chip:hover {
   background: var(--color-paper-3);
   text-decoration: none;
+}
+
+@container (max-width: 720px) {
+  .page {
+    padding-inline: var(--space-lg);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-lg);
+  }
+
+  .headerCover {
+    width: 160px;
+  }
+
+  .title {
+    font-size: clamp(2rem, 9cqi, 3rem);
+  }
+
+  .searchTop {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
