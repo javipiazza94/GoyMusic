@@ -3,6 +3,7 @@
 //! adapter can reuse it unchanged.
 
 mod config;
+mod coordinator;
 mod error;
 mod library;
 mod player;
@@ -22,8 +23,11 @@ use goymusic_library::folders;
 pub use config::ServicesConfig;
 pub use error::{ErrorCode, Result, ServiceError};
 pub use library::{AlbumDetail, ArtistDetail};
+pub use player::{PlayContext, PlayerView, Settings, UP_NEXT_LIMIT};
 pub use playlists::PlaylistDetail;
 
+use coordinator::Coordinator;
+use goymusic_library::state;
 use scan::ScanWorker;
 
 pub struct Services {
@@ -34,7 +38,8 @@ pub struct Services {
     art_db: Mutex<Db>,
     events: Arc<EventBus>,
     scans: Arc<ScanWorker>,
-    player: Mutex<Option<Player>>,
+    player: Arc<Mutex<Option<Player>>>,
+    coordinator: Coordinator,
     stopped: AtomicBool,
 }
 
@@ -44,6 +49,15 @@ impl Services {
         let events = Arc::new(EventBus::new());
         let scans = Arc::new(ScanWorker::start(Db::open(&config.db_path)?, events.clone()));
         let player = Player::spawn(sink, player::resolver(&config.db_path)?, events.clone());
+        player.set_volume(player::saved_volume(&db)?);
+        player.set_replaygain(player::saved_replaygain(&db)?);
+        // subscribed before the restore so nothing the player says is missed
+        let coordinator_events = events.subscribe();
+        if let Some((queue, position_ms)) = state::load_queue(&db)? {
+            player.restore(queue, position_ms);
+        }
+        let player = Arc::new(Mutex::new(Some(player)));
+        let coordinator = Coordinator::start(Db::open(&config.db_path)?, coordinator_events, player.clone());
         let has_folders = !folders::list(&db)?.is_empty();
         let services = Services {
             art_db: Mutex::new(Db::open(&config.db_path)?),
@@ -51,7 +65,8 @@ impl Services {
             config,
             events,
             scans,
-            player: Mutex::new(Some(player)),
+            player,
+            coordinator,
             stopped: AtomicBool::new(false),
         };
         if has_folders {
@@ -75,12 +90,22 @@ impl Services {
         if self.stopped.swap(true, Ordering::SeqCst) {
             return;
         }
+        if let Some(snapshot) = self.snapshot() {
+            if let Err(e) = state::save_queue(&self.db(), &snapshot.queue, snapshot.position_ms) {
+                tracing::warn!(error = %e, "could not save the queue on exit");
+            }
+        }
+        self.coordinator.stop();
         self.scans.stop();
         self.player.lock().expect("player poisoned").take();
     }
 
     fn db(&self) -> MutexGuard<'_, Db> {
         self.db.lock().expect("database poisoned")
+    }
+
+    fn with_player<T>(&self, f: impl FnOnce(&Player) -> T) -> Option<T> {
+        self.player.lock().expect("player poisoned").as_ref().map(f)
     }
 }
 
