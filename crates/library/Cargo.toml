@@ -7,6 +7,7 @@ license.workspace = true
 [dependencies]
 deunicode.workspace = true
 goymusic-core = { path = "../core" }
+image.workspace = true
 lofty.workspace = true
 rand.workspace = true
 rayon.workspace = true

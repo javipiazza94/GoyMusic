@@ -81,3 +81,35 @@ pub fn write_tagged_wav(path: &Path, seconds: f32, meta: &Meta) {
         tag.save_to_path(path, WriteOptions::default()).unwrap();
     }
 }
+
+/// Writes a solid-colour PNG of `width`×`height`.
+pub fn write_png(path: &Path, width: u32, height: u32) {
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).unwrap();
+    }
+    image::RgbImage::from_pixel(width, height, image::Rgb([200, 40, 90]))
+        .save(path)
+        .unwrap();
+}
+
+pub fn png_bytes(width: u32, height: u32) -> Vec<u8> {
+    let mut out = std::io::Cursor::new(Vec::new());
+    image::RgbImage::from_pixel(width, height, image::Rgb([20, 120, 200]))
+        .write_to(&mut out, image::ImageFormat::Png)
+        .unwrap();
+    out.into_inner()
+}
+
+/// Adds a front-cover picture to the file's existing tag.
+pub fn embed_cover(audio: &Path, png: Vec<u8>) {
+    use lofty::picture::{MimeType, Picture, PictureType};
+    let mut tagged = lofty::read_from_path(audio).unwrap();
+    let tag = tagged.primary_tag_mut().expect("file has a tag");
+    tag.push_picture(Picture::new_unchecked(
+        PictureType::CoverFront,
+        Some(MimeType::Png),
+        None,
+        png,
+    ));
+    tag.save_to_path(audio, WriteOptions::default()).unwrap();
+}

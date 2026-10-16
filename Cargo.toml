@@ -12,6 +12,7 @@ cpal = "=0.15.3"
 deunicode = "1"
 flacenc = "=0.5.1"
 hound = "3"
+image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
 lofty = "0.21"
 rand = "0.8"
 rayon = "1"
