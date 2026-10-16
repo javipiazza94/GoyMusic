@@ -20,6 +20,8 @@ export interface PlayerStore {
 }
 
 let nextNotice = 1;
+/** Answers to `refresh` can arrive out of order; only the latest request may apply. */
+let latestRefresh = 0;
 
 /** Player state, fed by core events (see `events.ts`); the UI never polls. */
 export const usePlayer = create<PlayerStore>((set, get) => ({
@@ -28,8 +30,9 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   scan: null,
   notices: [],
   async refresh() {
+    const request = ++latestRefresh;
     const view = unwrap(await commands.playerView());
-    set({ view, positionMs: view.positionMs });
+    if (request === latestRefresh) set({ view, positionMs: view.positionMs });
   },
   setPosition(trackId, ms) {
     if (get().view?.track?.id === trackId) set({ positionMs: ms });

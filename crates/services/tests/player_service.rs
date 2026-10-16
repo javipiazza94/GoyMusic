@@ -212,3 +212,20 @@ fn restore_survives_a_track_that_left_the_library() {
     assert!(services.wait_idle(LONG));
     services.player_view().unwrap();
 }
+
+#[test]
+fn an_unreadable_saved_queue_does_not_prevent_starting() {
+    let dir = tempfile::tempdir().unwrap();
+    drop(start(dir.path()));
+    let db = Db::open(&common::config(dir.path()).db_path).unwrap();
+    db.conn()
+        .execute(
+            "INSERT OR REPLACE INTO queue_state (id, snapshot, position_ms) VALUES (1, '{broken', 0)",
+            [],
+        )
+        .unwrap();
+    drop(db);
+    let services = goymusic_services::Services::start(common::config(dir.path()), common::capture_sink().0)
+        .expect("starts with an empty queue");
+    assert_eq!(services.player_view().unwrap().track, None);
+}

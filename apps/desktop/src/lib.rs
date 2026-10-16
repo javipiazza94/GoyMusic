@@ -91,13 +91,19 @@ pub fn run() {
     let services = Arc::new(Services::start(ServicesConfig::default_paths(), sink).expect("start GoyMusic services"));
     let builder = specta_builder();
     let art_services = services.clone();
+    let art_pool = art_protocol::ArtPool::sized_for_this_machine();
     let forward_services = services.clone();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(builder.invoke_handler())
         .manage(services.clone())
         .register_asynchronous_uri_scheme_protocol("art", move |_ctx, request, responder| {
-            art_protocol::respond(art_services.clone(), request.uri().path().to_owned(), responder);
+            art_protocol::respond(
+                &art_pool,
+                art_services.clone(),
+                request.uri().path().to_owned(),
+                responder,
+            );
         })
         .setup(move |app| {
             builder.mount_events(app);

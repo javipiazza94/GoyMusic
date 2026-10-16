@@ -57,8 +57,12 @@ impl Services {
         player.set_replaygain(player::saved_replaygain(&db)?);
         // subscribed before the restore so nothing the player says is missed
         let coordinator_events = events.subscribe();
-        if let Some((queue, position_ms)) = state::load_queue(&db)? {
-            player.restore(queue, position_ms);
+        // a saved queue that no longer reads (corrupt row, older format) must not stop the
+        // app from opening: start with an empty queue instead
+        match state::load_queue(&db) {
+            Ok(Some((queue, position_ms))) => player.restore(queue, position_ms),
+            Ok(None) => {}
+            Err(e) => tracing::warn!(error = %e, "ignoring the saved queue"),
         }
         let player = Arc::new(Mutex::new(Some(player)));
         let coordinator = Coordinator::start(Db::open(&config.db_path)?, coordinator_events, player.clone());
@@ -97,15 +101,18 @@ impl Services {
         if self.stopped.swap(true, Ordering::SeqCst) {
             return;
         }
-        if let Some(snapshot) = self.snapshot() {
+        // the coordinator first, so it cannot overwrite the final save below
+        self.coordinator.stop();
+        let snapshot = self.snapshot();
+        // silence at once; the scan is cancelled rather than awaited
+        self.player.lock().expect("player poisoned").take();
+        self.scans.stop();
+        self.watcher.stop();
+        if let Some(snapshot) = snapshot {
             if let Err(e) = state::save_queue(&self.db(), &snapshot.queue, snapshot.position_ms) {
                 tracing::warn!(error = %e, "could not save the queue on exit");
             }
         }
-        self.coordinator.stop();
-        self.watcher.stop();
-        self.scans.stop();
-        self.player.lock().expect("player poisoned").take();
     }
 
     pub fn watch_status(&self) -> WatchStatus {

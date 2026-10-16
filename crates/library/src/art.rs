@@ -67,13 +67,30 @@ impl Source {
 /// Path of the album's cached thumbnail, creating or refreshing it when needed. `None` when
 /// the album has no art or its image cannot be decoded.
 pub fn album_art(db: &Db, album: AlbumId, size: ArtSize, cache_dir: &Path) -> Result<Option<PathBuf>> {
-    let Some(first) = queries::album_tracks(db, album)?.into_iter().next() else {
-        return Ok(None);
-    };
-    let Some(source) = find_source(Path::new(&first.path)) else {
-        return Ok(None);
-    };
+    match first_track(db, album)? {
+        Some(track) => thumbnail(&track, album, size, cache_dir),
+        None => Ok(None),
+    }
+}
+
+/// The track whose embedded picture or folder holds the album's cover.
+pub fn first_track(db: &Db, album: AlbumId) -> Result<Option<PathBuf>> {
+    Ok(queries::album_tracks(db, album)?
+        .into_iter()
+        .next()
+        .map(|t| PathBuf::from(t.path)))
+}
+
+/// [`album_art`] without the database: `track` is the album's [`first_track`]. A thumbnail
+/// newer than the track file and any cover image beside it is served without reading tags.
+pub fn thumbnail(track: &Path, album: AlbumId, size: ArtSize, cache_dir: &Path) -> Result<Option<PathBuf>> {
     let target = cache_dir.join(format!("{}-{}.webp", album.0, size.px()));
+    if cache_is_current(&target, track) {
+        return Ok(Some(target));
+    }
+    let Some(source) = find_source(track) else {
+        return Ok(None);
+    };
     if is_fresh(&target, source.origin()) {
         return Ok(Some(target));
     }
@@ -83,6 +100,17 @@ pub fn album_art(db: &Db, album: AlbumId, size: ArtSize, cache_dir: &Path) -> Re
     std::fs::create_dir_all(cache_dir)?;
     write_thumbnail(&image, size.px(), &target)?;
     Ok(Some(target))
+}
+
+/// Cheap check (file times only): no possible source changed since the thumbnail was made.
+fn cache_is_current(target: &Path, track: &Path) -> bool {
+    let Some(cached) = modified(target) else {
+        return false;
+    };
+    let covers = track.parent().map(cover_files).unwrap_or_default();
+    std::iter::once(track.to_owned())
+        .chain(covers)
+        .all(|source| modified(&source).is_none_or(|m| m <= cached))
 }
 
 fn find_source(track: &Path) -> Option<Source> {
@@ -105,10 +133,12 @@ fn embedded_picture(track: &Path) -> Option<Vec<u8>> {
         .map(|p| p.data().to_vec())
 }
 
-/// `cover.*` before `folder.*`, extension and case ignored.
-fn folder_cover(dir: &Path) -> Option<PathBuf> {
-    let mut candidates: Vec<(usize, PathBuf)> = std::fs::read_dir(dir)
-        .ok()?
+/// Every `cover.*` / `folder.*` image in `dir`, `cover` first, extension and case ignored.
+fn cover_files(dir: &Path) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut candidates: Vec<(usize, PathBuf)> = entries
         .filter_map(|e| e.ok().map(|e| e.path()))
         .filter_map(|path| {
             let stem = path.file_stem()?.to_str()?.to_lowercase();
@@ -118,7 +148,11 @@ fn folder_cover(dir: &Path) -> Option<PathBuf> {
         })
         .collect();
     candidates.sort();
-    candidates.into_iter().next().map(|(_, path)| path)
+    candidates.into_iter().map(|(_, path)| path).collect()
+}
+
+fn folder_cover(dir: &Path) -> Option<PathBuf> {
+    cover_files(dir).into_iter().next()
 }
 
 fn modified(path: &Path) -> Option<SystemTime> {

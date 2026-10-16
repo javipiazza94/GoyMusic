@@ -132,3 +132,19 @@ fn sizes_map_to_pixels() {
     assert_eq!(ArtSize::from_px(600), Some(ArtSize::Large));
     assert_eq!(ArtSize::from_px(300), None);
 }
+
+#[test]
+fn a_cached_thumbnail_is_served_without_reading_the_audio_file() {
+    use std::os::unix::fs::PermissionsExt;
+    let music = tempfile::tempdir().unwrap();
+    let cache = tempfile::tempdir().unwrap();
+    let audio = album_in(music.path());
+    embed_cover(&audio, png_bytes(300, 300));
+    let (db, album) = scanned(music.path());
+    let first = album_art(&db, album, ArtSize::Small, cache.path()).unwrap().unwrap();
+    // unreadable now: serving from the cache must not need its tags
+    std::fs::set_permissions(&audio, std::fs::Permissions::from_mode(0o000)).unwrap();
+    let again = album_art(&db, album, ArtSize::Small, cache.path()).unwrap();
+    std::fs::set_permissions(&audio, std::fs::Permissions::from_mode(0o644)).unwrap();
+    assert_eq!(again, Some(first));
+}

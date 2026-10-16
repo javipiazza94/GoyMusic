@@ -3,15 +3,16 @@
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::UNIX_EPOCH;
 
 use goymusic_core::events::{Event, EventBus};
 use rayon::prelude::*;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, TransactionBehavior};
 use walkdir::WalkDir;
 
 use crate::db::Db;
-use crate::error::Result;
+use crate::error::{LibraryError, Result};
 use crate::maintenance;
 use crate::moves;
 use crate::tags::{read_tags, TrackTags};
@@ -50,6 +51,13 @@ struct Known {
 }
 
 pub fn scan(db: &mut Db, events: &EventBus) -> Result<ScanReport> {
+    scan_cancellable(db, events, &AtomicBool::new(false))
+}
+
+/// [`scan`] that gives up as soon as `cancel` is set (closing the app). A cancelled scan
+/// writes nothing: its transaction is rolled back, and the next scan starts over.
+pub fn scan_cancellable(db: &mut Db, events: &EventBus, cancel: &AtomicBool) -> Result<ScanReport> {
+    let cancelled = || cancel.load(Ordering::Relaxed);
     let mut report = ScanReport::default();
     let disk = walk_folders(db.conn(), &mut report)?;
     let known = known_tracks(db.conn())?;
@@ -73,12 +81,27 @@ pub fn scan(db: &mut Db, events: &EventBus) -> Result<ScanReport> {
     events.publish(Event::ScanProgress { done: 0, total });
     let read: Vec<_> = to_read
         .par_iter()
-        .map(|&(file, id)| (file, id, read_tags(Path::new(&file.path))))
+        .map(|&(file, id)| {
+            let tags = if cancelled() {
+                Err(LibraryError::Cancelled)
+            } else {
+                read_tags(Path::new(&file.path))
+            };
+            (file, id, tags)
+        })
         .collect();
+    if cancelled() {
+        return Err(LibraryError::Cancelled);
+    }
 
-    let tx = db.conn_mut().transaction()?;
+    let tx = db
+        .conn_mut()
+        .transaction_with_behavior(TransactionBehavior::Immediate)?;
     let mut missing = moves::load_missing(&tx, &missing)?;
     for (done, (file, existing, tags)) in read.into_iter().enumerate() {
+        if cancelled() {
+            return Err(LibraryError::Cancelled);
+        }
         match tags {
             // an unreadable changed file keeps its previous row
             Err(e) => report.errors.push(ScanError {

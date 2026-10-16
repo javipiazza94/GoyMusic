@@ -101,3 +101,43 @@ fn likes_work_while_a_scan_holds_the_write_lock() {
     holder.join().unwrap();
     assert_eq!(services.liked_ids().unwrap(), vec![ids[0]]);
 }
+
+/// Writes that run in a transaction (read, then write) must wait for another writer too,
+/// not fail at once with "database is locked" (a DEFERRED transaction cannot wait).
+#[test]
+fn playlist_edits_and_folder_removal_wait_for_another_writer() {
+    let dir = tempfile::tempdir().unwrap();
+    let (services, ids) = library(dir.path());
+    let p = services.create_playlist("P").unwrap();
+    let db_path = common::config(dir.path()).db_path;
+    let (locked_tx, locked_rx) = std::sync::mpsc::channel();
+    let holder = std::thread::spawn(move || {
+        let mut db = Db::open(&db_path).unwrap();
+        let tx = db.conn_mut().transaction().unwrap();
+        tx.execute("INSERT INTO settings (key, value) VALUES ('busy', '1')", [])
+            .unwrap();
+        locked_tx.send(()).unwrap();
+        std::thread::sleep(Duration::from_millis(500));
+        tx.commit().unwrap();
+    });
+    locked_rx.recv().unwrap();
+    services.add_to_playlist(p.id, &ids).expect("add waits for the writer");
+    holder.join().unwrap();
+    assert_eq!(services.playlist(p.id).unwrap().items.len(), 3);
+
+    let db_path = common::config(dir.path()).db_path;
+    let (locked_tx, locked_rx) = std::sync::mpsc::channel();
+    let holder = std::thread::spawn(move || {
+        let mut db = Db::open(&db_path).unwrap();
+        let tx = db.conn_mut().transaction().unwrap();
+        tx.execute("INSERT INTO settings (key, value) VALUES ('busy2', '1')", [])
+            .unwrap();
+        locked_tx.send(()).unwrap();
+        std::thread::sleep(Duration::from_millis(500));
+        tx.commit().unwrap();
+    });
+    locked_rx.recv().unwrap();
+    let folder = services.folders().unwrap()[0].id;
+    services.remove_folder(folder).expect("remove waits for the writer");
+    holder.join().unwrap();
+}

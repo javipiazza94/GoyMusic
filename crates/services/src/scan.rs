@@ -1,6 +1,7 @@
 //! Background scanning. Requests from the UI, the watcher and the polling fallback are
 //! coalesced: however many arrive during a scan, one more scan follows it.
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::JoinHandle;
@@ -8,6 +9,7 @@ use std::time::{Duration, Instant};
 
 use goymusic_core::events::EventBus;
 use goymusic_library::db::Db;
+use goymusic_library::error::LibraryError;
 use goymusic_library::scanner;
 
 #[derive(Default)]
@@ -20,6 +22,7 @@ struct Status {
 pub(crate) struct ScanWorker {
     requests: Mutex<Option<Sender<()>>>,
     status: Arc<(Mutex<Status>, Condvar)>,
+    cancel: Arc<AtomicBool>,
     thread: Mutex<Option<JoinHandle<()>>>,
 }
 
@@ -28,6 +31,8 @@ impl ScanWorker {
         let (tx, rx) = channel::<()>();
         let status: Arc<(Mutex<Status>, Condvar)> = Arc::default();
         let shared = status.clone();
+        let cancel = Arc::new(AtomicBool::new(false));
+        let cancelled = cancel.clone();
         let thread = std::thread::Builder::new()
             .name("goymusic-scan".into())
             .spawn(move || {
@@ -41,11 +46,12 @@ impl ScanWorker {
                         s.pending = false;
                         s.running = true;
                     }
-                    match scanner::scan(&mut db, &events) {
+                    match scanner::scan_cancellable(&mut db, &events, &cancelled) {
                         Ok(report) if !report.errors.is_empty() => {
                             tracing::warn!(errors = report.errors.len(), "scan finished with errors")
                         }
                         Ok(_) => {}
+                        Err(LibraryError::Cancelled) => {}
                         Err(e) => tracing::warn!(error = %e, "scan failed"),
                     }
                     let mut s = shared.0.lock().expect("scan status poisoned");
@@ -57,6 +63,7 @@ impl ScanWorker {
         Self {
             requests: Mutex::new(Some(tx)),
             status,
+            cancel,
             thread: Mutex::new(Some(thread)),
         }
     }
@@ -91,15 +98,17 @@ impl ScanWorker {
         true
     }
 
-    /// Lets the current scan finish, drops queued requests and joins the thread.
+    /// Cancels the current scan (its transaction is rolled back) and drops queued requests,
+    /// without waiting: a scan blocked on the database must not hold up closing the app.
     pub(crate) fn stop(&self) {
         self.status.0.lock().expect("scan status poisoned").stopped = true;
+        self.cancel.store(true, Ordering::SeqCst);
         self.requests.lock().expect("scan requests poisoned").take();
-        if let Some(thread) = self.thread.lock().expect("scan thread poisoned").take() {
-            let _ = thread.join();
-        }
+        // detached: it ends on its own once it notices `cancel`
+        self.thread.lock().expect("scan thread poisoned").take();
         let mut s = self.status.0.lock().expect("scan status poisoned");
         s.pending = false;
+        s.running = false;
         self.status.1.notify_all();
     }
 }

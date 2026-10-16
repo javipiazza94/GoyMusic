@@ -126,3 +126,45 @@ fn album_art_is_served_from_the_cache_dir() {
     let art = services.album_art(album, ArtSize::Small).unwrap().unwrap();
     assert!(art.starts_with(common::config(dir.path()).art_dir), "{art:?}");
 }
+
+/// Closing the app while a long scan runs must silence the music at once, even while the
+/// rest of the shutdown is still waiting on the database.
+#[test]
+fn shutdown_during_a_scan_stops_playback_at_once() {
+    use goymusic_services::PlayContext;
+    let dir = tempfile::tempdir().unwrap();
+    let music = dir.path().join("music");
+    album_fixture(&music, "First", "Ana", 2);
+    let services = std::sync::Arc::new(start(dir.path()));
+    services.add_folder(&music).unwrap();
+    assert!(services.wait_idle(LONG));
+    let album = services.albums().unwrap()[0].id;
+    services.play(PlayContext::Album(album), 0).unwrap();
+    album_fixture(&music, "Second", "Bea", 2); // something to write, so the scan needs the lock
+
+    // another writer keeps the scan (and the final queue save) waiting for the write lock
+    let db_path = common::config(dir.path()).db_path;
+    let (locked_tx, locked_rx) = std::sync::mpsc::channel();
+    let holder = std::thread::spawn(move || {
+        let mut db = goymusic_library::db::Db::open(&db_path).unwrap();
+        let tx = db.conn_mut().transaction().unwrap();
+        tx.execute("INSERT INTO settings (key, value) VALUES ('busy', '1')", [])
+            .unwrap();
+        locked_tx.send(()).unwrap();
+        std::thread::sleep(Duration::from_secs(3));
+        tx.commit().unwrap();
+    });
+    locked_rx.recv().unwrap();
+    services.rescan();
+    std::thread::sleep(Duration::from_millis(300));
+
+    let closing = services.clone();
+    let shutdown = std::thread::spawn(move || closing.shutdown());
+    std::thread::sleep(Duration::from_millis(500));
+    assert!(
+        services.player_view().is_err(),
+        "music still playing 500 ms into shutdown"
+    );
+    shutdown.join().unwrap();
+    holder.join().unwrap();
+}

@@ -44,3 +44,16 @@ test("refresh loads the view and its position", async () => {
   expect(usePlayer.getState().view?.state).toBe("paused");
   expect(usePlayer.getState().positionMs).toBe(1_500);
 });
+
+test("a stale playerView answer never overwrites a newer one", async () => {
+  let answerOld!: (v: unknown) => void;
+  vi.mocked(commands.playerView)
+    .mockReturnValueOnce(new Promise((r) => (answerOld = r)) as never)
+    .mockResolvedValueOnce(ok(view({ state: "playing", positionMs: 2_000 })));
+  const older = usePlayer.getState().refresh();
+  await usePlayer.getState().refresh();
+  answerOld(ok(view({ state: "loading", positionMs: 0 })));
+  await older;
+  expect(usePlayer.getState().view?.state).toBe("playing");
+  expect(usePlayer.getState().positionMs).toBe(2_000);
+});

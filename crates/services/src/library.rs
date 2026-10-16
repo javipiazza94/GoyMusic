@@ -100,10 +100,13 @@ impl Services {
         Ok(search::search(&self.db(), query, limit as usize)?)
     }
 
-    /// Cached thumbnail of the album cover; generated on its own connection so a slow
-    /// resize never holds up UI commands.
+    /// Cached thumbnail of the album cover. Only the track lookup takes a connection (its
+    /// own one), so slow resizes run in parallel and never hold up UI commands.
     pub fn album_art(&self, id: AlbumId, size: ArtSize) -> Result<Option<PathBuf>> {
-        let db = self.art_db.lock().expect("art database poisoned");
-        Ok(art::album_art(&db, id, size, &self.config.art_dir)?)
+        let track = art::first_track(&self.art_db.lock().expect("art database poisoned"), id)?;
+        match track {
+            Some(track) => Ok(art::thumbnail(&track, id, size, &self.config.art_dir)?),
+            None => Ok(None),
+        }
     }
 }

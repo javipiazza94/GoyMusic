@@ -40,6 +40,7 @@ impl From<LibraryError> for ServiceError {
     fn from(e: LibraryError) -> Self {
         let code = match &e {
             LibraryError::NotFound { .. } => ErrorCode::NotFound,
+            LibraryError::Cancelled => ErrorCode::Internal,
             LibraryError::InvalidPosition { .. } => ErrorCode::InvalidInput,
             LibraryError::FolderOverlap(_) => ErrorCode::FolderOverlap,
             LibraryError::Io(_) | LibraryError::NonUtf8Path(_) => ErrorCode::Io,
