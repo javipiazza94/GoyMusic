@@ -8,6 +8,7 @@ use crate::error::{AudioError, Result};
 const CHUNK_FRAMES: usize = 1024;
 
 pub struct Converter {
+    in_rate: u32,
     in_channels: usize,
     out_channels: usize,
     resampler: Option<Resampling>,
@@ -43,6 +44,7 @@ impl Converter {
             })
         };
         Ok(Self {
+            in_rate,
             in_channels,
             out_channels,
             resampler,
@@ -57,6 +59,20 @@ impl Converter {
             None => Ok(mapped),
             Some(r) => r.push(&mapped, self.out_channels),
         }
+    }
+
+    /// `(sample rate, channels)` this converter accepts. A gapless successor with the same
+    /// input format keeps using it, so the resampler's history carries across the join
+    /// instead of being flushed with zeros (which clicks).
+    pub fn input_format(&self) -> (u32, usize) {
+        (self.in_rate, self.in_channels)
+    }
+
+    /// Output frames still owed for the input pushed so far (held inside the resampler).
+    pub fn owed_frames(&self) -> u64 {
+        self.resampler.as_ref().map_or(0, |r| {
+            (r.frames_in * r.out_rate / r.in_rate).saturating_sub(r.frames_out)
+        })
     }
 
     /// End of the track: flushes what the resampler still holds, so consecutive tracks join

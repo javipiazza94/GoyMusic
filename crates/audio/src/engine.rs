@@ -51,23 +51,21 @@ struct Feed {
     frames_out: u64,
     /// Track length in sink frames, when the container declares it.
     total_out: Option<u64>,
+    /// Whether any audio came out of this track at all.
+    produced: bool,
 }
 
 impl Feed {
-    /// Next converted block; `None` once the decoder and the resampler are both drained.
+    /// Next converted block (possibly empty while the resampler fills); `None` at the end
+    /// of the file. The converter is not flushed here: a gapless successor may inherit it.
     fn next_samples(&mut self, channels: usize) -> Result<Option<Vec<f32>>, String> {
-        let mut samples = match self.decoder.next_chunk().map_err(|e| e.to_string())? {
-            Some(chunk) => self.converter.push(&chunk).map_err(|e| e.to_string())?,
-            None => {
-                let tail = self.converter.finish().map_err(|e| e.to_string())?;
-                if tail.is_empty() {
-                    return Ok(None);
-                }
-                tail
-            }
+        let Some(chunk) = self.decoder.next_chunk().map_err(|e| e.to_string())? else {
+            return Ok(None);
         };
+        let mut samples = self.converter.push(&chunk).map_err(|e| e.to_string())?;
         gain::apply(&mut samples, self.replaygain);
         self.frames_out += (samples.len() / channels) as u64;
+        self.produced |= !samples.is_empty();
         Ok(Some(samples))
     }
 
@@ -108,6 +106,9 @@ pub struct Engine {
     segments: VecDeque<Segment>,
     /// Where to resume once a sink is available again (device lost / none at start).
     resume_at: Option<(TrackId, u64)>,
+    /// Consecutive tracks that ended without producing audio (empty or undecodable files).
+    /// Once it exceeds the queue length, every track left is silent: stop instead of spinning.
+    silent_streak: usize,
 }
 
 impl Engine {
@@ -132,6 +133,7 @@ impl Engine {
             played_base: 0,
             segments: VecDeque::new(),
             resume_at: None,
+            silent_streak: 0,
         };
         engine.apply_volume();
         engine
@@ -189,6 +191,7 @@ impl Engine {
     // ---- commands ----
 
     pub fn play_context(&mut self, tracks: Vec<TrackId>, start_index: usize) {
+        self.silent_streak = 0;
         let first = self.queue.play_context(tracks, start_index, &mut self.rng);
         self.start(first, 0, PlaybackState::Playing);
         self.events.publish(Event::QueueChanged);
@@ -200,7 +203,15 @@ impl Engine {
         }
     }
 
+    /// From `Paused`, continues. From `Ended`, plays the context again from the start.
     pub fn resume(&mut self) {
+        if self.state == PlaybackState::Ended {
+            let context = self.queue.context().to_vec();
+            if !context.is_empty() {
+                self.play_context(context, 0);
+            }
+            return;
+        }
         if self.state == PlaybackState::Paused {
             if self.sink.is_none() && !self.try_reopen_sink() {
                 return;
@@ -214,21 +225,24 @@ impl Engine {
         if self.queue.current().is_none() {
             return;
         }
+        self.silent_streak = 0;
         let next = self.queue.next();
         self.start(next, 0, PlaybackState::Playing);
         self.events.publish(Event::QueueChanged);
     }
 
+    /// Restarts the track after 3 s, otherwise goes back; also works once the queue has
+    /// ended (the history still holds the last track).
     pub fn previous(&mut self) {
-        let Some(current) = self.queue.current() else {
-            return;
-        };
         let target = match self.queue.previous(self.position_ms()) {
-            Previous::Restart => current,
-            Previous::Track(track) => track,
+            Previous::Restart => self.queue.current(),
+            Previous::Track(track) => Some(track),
         };
-        self.start(Some(target), 0, PlaybackState::Playing);
-        self.events.publish(Event::QueueChanged);
+        if target.is_some() {
+            self.silent_streak = 0;
+            self.start(target, 0, PlaybackState::Playing);
+            self.events.publish(Event::QueueChanged);
+        }
     }
 
     pub fn seek(&mut self, position_ms: u64) {
@@ -239,6 +253,7 @@ impl Engine {
                 PlaybackState::Playing
             };
             self.start(Some(track), position_ms, then);
+            self.announce_position();
         }
     }
 
@@ -283,9 +298,11 @@ impl Engine {
     /// Restores a saved queue, paused at `position_ms` of its current track.
     pub fn restore(&mut self, queue: Queue, position_ms: u64) {
         self.queue = queue;
+        self.silent_streak = 0;
         let current = self.queue.current();
         self.start(current, position_ms, PlaybackState::Paused);
         self.events.publish(Event::QueueChanged);
+        self.announce_position();
     }
 
     // ---- driving ----
@@ -294,7 +311,7 @@ impl Engine {
     /// the queue. Call it in a loop; it does a bounded amount of work.
     pub fn pump(&mut self) {
         if let Some(error) = self.sink.as_mut().and_then(|s| s.take_error()) {
-            self.device_lost(error.to_string());
+            self.device_failed(error.to_string());
             return;
         }
         if self.state != PlaybackState::Playing {
@@ -315,6 +332,9 @@ impl Engine {
                 break;
             }
             self.maybe_preload(format);
+        }
+        if self.state != PlaybackState::Playing {
+            return; // decode_more gave up on a queue of silent tracks
         }
         self.flush_pending(format);
         self.maybe_preload(format);
@@ -361,6 +381,17 @@ impl Engine {
     }
 
     // ---- internals ----
+
+    /// `PositionChanged` in any state: after a seek or restore the UI must move the slider
+    /// even while paused (it never polls).
+    fn announce_position(&self) {
+        if let Some(track) = self.current() {
+            self.events.publish(Event::PositionChanged {
+                track,
+                position_ms: self.position_ms(),
+            });
+        }
+    }
 
     fn played(&self) -> u64 {
         self.sink
@@ -486,6 +517,7 @@ impl Engine {
             decoder,
             converter,
             replaygain,
+            produced: false,
         })
     }
 
@@ -511,21 +543,48 @@ impl Engine {
         };
         match feed.next_samples(format.channels as usize) {
             Ok(Some(samples)) => {
+                if !samples.is_empty() {
+                    self.silent_streak = 0;
+                }
                 self.pending.extend(samples);
                 true
             }
             Ok(None) => {
-                self.feed = None;
-                self.start_successor(format);
-                true
+                let done = self.feed.take().expect("feed checked above");
+                self.track_finished(done, format)
             }
             Err(reason) => {
-                let track = feed.track;
-                self.feed = None;
-                self.events.publish(Event::PlaybackError { track, reason });
-                self.start_successor(format);
-                true
+                let done = self.feed.take().expect("feed checked above");
+                self.events.publish(Event::PlaybackError {
+                    track: done.track,
+                    reason,
+                });
+                self.track_finished(done, format)
             }
+        }
+    }
+
+    /// The feed ran out (or failed). Starts the successor behind it, unless every track in
+    /// the queue has turned out silent, in which case playback ends. `false` when stopped.
+    fn track_finished(&mut self, done: Feed, format: SinkFormat) -> bool {
+        if !done.produced {
+            self.silent_streak += 1;
+            if self.silent_streak > self.queue.context().len() + self.queue.user_queue().len() {
+                self.set_state(PlaybackState::Ended);
+                self.reset_output();
+                return false;
+            }
+        }
+        self.start_successor(format, done.converter, done.replaygain);
+        true
+    }
+
+    /// Flushes a converter's held frames into `pending` (end of a track with no gapless
+    /// successor in the same input format).
+    fn flush_converter(&mut self, mut converter: Converter, replaygain: f32) {
+        if let Ok(mut tail) = converter.finish() {
+            gain::apply(&mut tail, replaygain);
+            self.pending.extend(tail);
         }
     }
 
@@ -539,25 +598,36 @@ impl Engine {
         next
     }
 
-    fn start_successor(&mut self, format: SinkFormat) {
-        let Some(track) = self.successor() else {
-            return;
-        };
-        let feed = match self.preload.take() {
-            Some(preloaded) if preloaded.track == track => Ok(preloaded),
-            _ => self.open_feed(track, 0, format),
-        };
+    /// Starts feeding the next track right behind the one that ended. If it has the same
+    /// input format it inherits `previous` (the ended track's converter), so the resampler
+    /// runs on across the join without the zero-padded flush that would click.
+    fn start_successor(&mut self, format: SinkFormat, previous: Converter, previous_gain: f32) {
+        let channels = format.channels as usize;
         // A successor that fails to open is left alone: when the buffer drains, `pump`
         // advances the queue and `start` reports the error and skips it.
-        if let Ok(feed) = feed {
-            let start = self.written + (self.pending.len() / format.channels as usize) as u64;
-            self.segments.push_back(Segment {
-                track,
-                start,
-                offset: 0,
-            });
-            self.feed = Some(feed);
-        }
+        let next = self.successor().and_then(|track| match self.preload.take() {
+            Some(preloaded) if preloaded.track == track => Some(preloaded),
+            _ => self.open_feed(track, 0, format).ok(),
+        });
+        let Some(mut feed) = next else {
+            self.flush_converter(previous, previous_gain);
+            return;
+        };
+        let start = if previous.input_format() == feed.converter.input_format() {
+            // frames of the ended track still inside the resampler come out first
+            let start = self.written + (self.pending.len() / channels) as u64 + previous.owed_frames();
+            feed.converter = previous;
+            start
+        } else {
+            self.flush_converter(previous, previous_gain);
+            self.written + (self.pending.len() / channels) as u64
+        };
+        self.segments.push_back(Segment {
+            track: feed.track,
+            start,
+            offset: 0,
+        });
+        self.feed = Some(feed);
     }
 
     fn maybe_preload(&mut self, format: SinkFormat) {
@@ -590,7 +660,13 @@ impl Engine {
             self.segments.pop_front();
             let heard = self.segments[0].track;
             let committed = self.queue.on_track_ended();
-            debug_assert_eq!(committed, Some(heard), "successor must match the queue");
+            if committed != Some(heard) {
+                // `queue_changed` keeps the buffer in step with the queue, so this is a
+                // safety net: follow the queue rather than desynchronise.
+                let state = self.state;
+                self.start(committed, 0, state);
+                return;
+            }
             self.preload_tried = None;
             let state = self.state;
             self.set_state(state);
@@ -598,8 +674,17 @@ impl Engine {
         }
     }
 
-    /// After a queue edit: a preload or a buffered successor that is no longer next is
-    /// dropped. A buffered one means restarting the heard track where it is (rare: only in
+    /// Whether the tracks buffered behind the heard one still follow the queue's order.
+    fn buffer_matches_queue(&self) -> bool {
+        let mut queue = self.queue.clone();
+        self.segments
+            .iter()
+            .skip(1)
+            .all(|s| queue.on_track_ended() == Some(s.track))
+    }
+
+    /// After a queue edit: a preload or buffered successors that are no longer next are
+    /// dropped. Buffered ones mean restarting the heard track where it is (rare: only in
     /// the last half second of a track).
     fn queue_changed(&mut self) {
         let next = self.queue.peek_next();
@@ -607,7 +692,7 @@ impl Engine {
             self.preload = None;
         }
         self.preload_tried = None;
-        if self.segments.len() > 1 && Some(self.segments[1].track) != next {
+        if !self.buffer_matches_queue() {
             if let Some(track) = self.queue.current() {
                 let position_ms = self.position_ms();
                 let state = self.state;
@@ -617,7 +702,11 @@ impl Engine {
         self.events.publish(Event::QueueChanged);
     }
 
-    fn device_lost(&mut self, reason: String) {
+    /// The sink reported an error. Reopen the default device at once and carry on where
+    /// the music was (ALSA also reports transient errors); only if that fails, pause, tell
+    /// the UI and leave the retries to the player thread.
+    fn device_failed(&mut self, reason: String) {
+        let was = self.state;
         if let Some(track) = self.current() {
             self.resume_at = Some((track, self.position_ms()));
         }
@@ -626,6 +715,12 @@ impl Engine {
         self.preload = None;
         self.pending.clear();
         self.segments.clear();
+        if self.try_reopen_sink() {
+            if was == PlaybackState::Playing {
+                self.set_state(PlaybackState::Playing);
+            }
+            return;
+        }
         self.set_state(PlaybackState::Paused);
         self.events.publish(Event::AudioDeviceLost { reason });
     }

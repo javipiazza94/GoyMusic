@@ -425,3 +425,166 @@ fn position_events_only_while_playing() {
         }]
     );
 }
+
+// ---- final review fixes ----
+
+#[test]
+fn empty_or_undecodable_tracks_on_repeat_end_instead_of_spinning() {
+    let dir = tempfile::tempdir().unwrap();
+    let empty = dir.path().join("empty.wav");
+    write_wav(&empty, 8_000, 1, &[]);
+    let corrupt = dir.path().join("corrupt.flac");
+    write_flac(&corrupt, 8_000, 1, &sine(8_000, 1, 440.0, 0, 8_000));
+    let mut bytes = std::fs::read(&corrupt).unwrap();
+    for b in bytes.iter_mut().skip(42) {
+        *b = 0xA5; // header intact, every frame garbage
+    }
+    std::fs::write(&corrupt, bytes).unwrap();
+    let mut rig = Rig::new(LOW, &[(1, empty), (2, corrupt)]);
+    rig.engine.set_repeat(RepeatMode::All);
+
+    rig.engine.play_context(vec![TrackId(1), TrackId(2)], 0);
+    rig.run(1_000);
+
+    assert_eq!(rig.engine.state(), PlaybackState::Ended);
+    assert!(rig.drain_events().len() < 100, "event storm");
+}
+
+#[test]
+fn resampled_gapless_join_matches_the_unsplit_track() {
+    let dir = tempfile::tempdir().unwrap();
+    let whole = dir.path().join("whole.flac");
+    write_flac(&whole, 44_100, 1, &sine(44_100, 1, 440.0, 0, 50_000));
+    let mut split = Vec::new();
+    for (i, (start, frames)) in [(0u64, 30_000u64), (30_000, 20_000)].iter().enumerate() {
+        let path = dir.path().join(format!("{i}.flac"));
+        write_flac(&path, 44_100, 1, &sine(44_100, 1, 440.0, *start, *frames));
+        split.push((i as i64 + 1, path));
+    }
+    let format = SinkFormat {
+        sample_rate: 48_000,
+        channels: 1,
+    };
+    let mut reference = Rig::new(format, &[(1, whole)]);
+    reference.engine.play_context(vec![TrackId(1)], 0);
+    reference.run(10_000);
+    let mut rig = Rig::new(format, &split);
+    rig.engine.play_context(vec![TrackId(1), TrackId(2)], 0);
+    rig.run(10_000);
+
+    let (a, b) = (reference.sink(0).played(), rig.sink(0).played());
+    assert_eq!(a.len(), b.len());
+    let worst = a.iter().zip(&b).map(|(x, y)| (x - y).abs()).fold(0f32, f32::max);
+    assert!(worst < 1e-3, "click at the join: {worst}");
+}
+
+#[test]
+fn previous_and_play_work_after_the_queue_ends() {
+    let dir = tempfile::tempdir().unwrap();
+    let files = short_tracks(dir.path(), &[1, 1]);
+    let mut rig = Rig::new(LOW, &files);
+    rig.engine.play_context(vec![TrackId(1), TrackId(2)], 0);
+    rig.run(10_000);
+    assert_eq!(rig.engine.state(), PlaybackState::Ended);
+
+    rig.engine.previous();
+    assert_eq!(
+        (rig.engine.state(), rig.engine.current()),
+        (PlaybackState::Playing, Some(TrackId(2)))
+    );
+    rig.run(10_000);
+
+    rig.engine.resume();
+    assert_eq!(
+        (rig.engine.state(), rig.engine.current()),
+        (PlaybackState::Playing, Some(TrackId(1)))
+    );
+}
+
+#[test]
+fn queue_edit_beyond_the_first_buffered_successor_resyncs() {
+    let dir = tempfile::tempdir().unwrap();
+    let files = short_tracks(dir.path(), &[1, 1, 1, 1]);
+    let short = dir.path().join("short.wav");
+    write_wav(&short, 8_000, 1, &sine(8_000, 1, 440.0, 0, 1_600)); // 0.2 s
+    let mut files: Vec<(i64, PathBuf)> = files.into_iter().filter(|(id, _)| *id != 2).collect();
+    files.push((2, short));
+    let mut rig = Rig::new(LOW, &files);
+    let sink = rig.sink(0);
+    sink.hold(true);
+    rig.engine.play_context(vec![TrackId(1), TrackId(4)], 0);
+    rig.engine.queue_add(&[TrackId(2), TrackId(3)]);
+    for _ in 0..100 {
+        rig.engine.pump();
+        if rig.engine.buffered_tracks().len() == 3 {
+            break;
+        }
+        sink.play(400, 1);
+    }
+    assert_eq!(rig.engine.buffered_tracks(), vec![TrackId(1), TrackId(2), TrackId(3)]);
+
+    rig.engine.queue_remove(1); // drop 3, already buffered behind 2
+
+    sink.hold(false);
+    sink.play(usize::MAX / 2, 1);
+    rig.run(10_000);
+    assert_eq!(heard(&rig.drain_events()), vec![1, 2, 4]);
+}
+
+#[test]
+fn transient_device_error_reopens_without_pausing() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("ramp.wav");
+    write_wav(&path, 8_000, 1, &ramp(30_000));
+    let mut rig = Rig::new(LOW, &[(1, path)]);
+    rig.sink(0).hold(true);
+    rig.engine.play_context(vec![TrackId(1)], 0);
+    rig.advance(0, 8_000);
+    rig.drain_events();
+
+    rig.sink(0).fail(SinkError::Device("xrun".into()));
+    rig.engine.pump();
+
+    assert_eq!(rig.engine.state(), PlaybackState::Playing);
+    assert!(!rig.engine.needs_sink());
+    assert!(!rig
+        .drain_events()
+        .iter()
+        .any(|e| matches!(e, Event::AudioDeviceLost { .. })));
+    rig.engine.pump();
+    assert_eq!(to_i16(&rig.sink(1).played()[..1]), vec![8_000]);
+}
+
+#[test]
+fn seek_and_restore_while_paused_publish_the_new_position() {
+    let dir = tempfile::tempdir().unwrap();
+    let files = short_tracks(dir.path(), &[5]);
+    let mut rig = Rig::new(LOW, &files);
+    rig.sink(0).hold(true);
+    rig.engine.play_context(vec![TrackId(1)], 0);
+    rig.engine.pause();
+    rig.drain_events();
+
+    rig.engine.seek(1_500);
+    let queue = rig.engine.queue().clone();
+    rig.engine.restore(queue, 2_500);
+
+    let positions: Vec<Event> = rig
+        .drain_events()
+        .into_iter()
+        .filter(|e| matches!(e, Event::PositionChanged { .. }))
+        .collect();
+    assert_eq!(
+        positions,
+        vec![
+            Event::PositionChanged {
+                track: TrackId(1),
+                position_ms: 1_500
+            },
+            Event::PositionChanged {
+                track: TrackId(1),
+                position_ms: 2_500
+            },
+        ]
+    );
+}
