@@ -5,7 +5,9 @@ use rusqlite::{params, OptionalExtension, Row};
 use crate::db::Db;
 use crate::error::{LibraryError, Result};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub enum TrackSort {
     Title,
     Artist,
@@ -42,11 +44,11 @@ pub(crate) fn track_from_row(r: &Row) -> rusqlite::Result<Track> {
     })
 }
 
-const ALBUM_SELECT: &str = "
+pub(crate) const ALBUM_SELECT: &str = "
     SELECT al.id, al.title, ar.name, al.year, (SELECT count(*) FROM tracks t WHERE t.album_id = al.id)
       FROM albums al LEFT JOIN artists ar ON ar.id = al.artist_id";
 
-fn album_from_row(r: &Row) -> rusqlite::Result<Album> {
+pub(crate) fn album_from_row(r: &Row) -> rusqlite::Result<Album> {
     Ok(Album {
         id: AlbumId(r.get(0)?),
         title: r.get(1)?,
@@ -98,6 +100,34 @@ pub fn artists(db: &Db) -> Result<Vec<Artist>> {
         })?
         .collect::<rusqlite::Result<_>>()?;
     Ok(artists)
+}
+
+pub fn artist(db: &Db, id: ArtistId) -> Result<Artist> {
+    db.conn()
+        .query_row("SELECT id, name FROM artists WHERE id = ?1", [id.0], |r| {
+            Ok(Artist {
+                id: ArtistId(r.get(0)?),
+                name: r.get(1)?,
+            })
+        })
+        .optional()?
+        .ok_or(LibraryError::NotFound {
+            kind: "artist",
+            id: id.0,
+        })
+}
+
+/// Tracks the artist appears on, album by album (oldest first), in disc and track order.
+pub fn artist_tracks(db: &Db, id: ArtistId) -> Result<Vec<Track>> {
+    let sql = format!(
+        "{TRACK_SELECT} WHERE t.id IN (SELECT track_id FROM track_artists WHERE artist_id = ?1)
+         ORDER BY al.year, al.title COLLATE NOCASE, coalesce(t.disc_no, 1), t.track_no, t.id"
+    );
+    let mut stmt = db.conn().prepare(&sql)?;
+    let tracks = stmt
+        .query_map([id.0], track_from_row)?
+        .collect::<rusqlite::Result<_>>()?;
+    Ok(tracks)
 }
 
 pub fn artist_albums(db: &Db, id: ArtistId) -> Result<Vec<Album>> {

@@ -144,3 +144,12 @@ fn search_is_fast_on_a_large_library() {
         assert!(elapsed.as_millis() < 50, "{query:?} took {elapsed:?}");
     }
 }
+
+#[test]
+fn search_results_serialize_for_the_ui() {
+    let (_dir, db) = library();
+    let v = serde_json::to_value(search(&db, "Radiohead", 10).unwrap()).unwrap();
+    assert_eq!(v["top"]["kind"], "artist");
+    assert_eq!(v["top"]["item"]["name"], "Radiohead");
+    assert!(v["tracks"].is_array());
+}

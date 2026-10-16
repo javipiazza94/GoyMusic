@@ -35,6 +35,7 @@ pub struct Meta<'a> {
     pub album: Option<&'a str>,
     pub album_artist: Option<&'a str>,
     pub track: Option<u32>,
+    pub year: Option<i32>,
     pub mb_recording_id: Option<&'a str>,
 }
 
@@ -46,6 +47,7 @@ impl<'a> Meta<'a> {
             album: None,
             album_artist: None,
             track: None,
+            year: None,
             mb_recording_id: None,
         }
     }
@@ -64,6 +66,9 @@ pub fn write_tagged_wav(path: &Path, seconds: f32, meta: &Meta) {
     }
     if let Some(track) = meta.track {
         tag.insert_text(ItemKey::TrackNumber, track.to_string());
+    }
+    if let Some(year) = meta.year {
+        tag.insert_text(ItemKey::RecordingDate, year.to_string());
     }
     // The MusicBrainz recording id is an ID3v2 UFID frame (binary), not a text frame, so
     // `insert_text` would drop it. Write it through the concrete ID3v2 tag.
