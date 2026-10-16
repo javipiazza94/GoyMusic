@@ -116,7 +116,9 @@ export type ImportReport = {
 };
 
 /**  The list playback comes from (spec §4). */
-export type PlayContext = { kind: "album"; id: AlbumId } | { kind: "artist"; id: ArtistId } | { kind: "playlist"; id: PlaylistId } | { kind: "liked" } | { kind: "tracks"; id: TrackId[] };
+export type PlayContext = { kind: "album"; id: AlbumId } | { kind: "artist"; id: ArtistId } | { kind: "playlist"; id: PlaylistId } | { kind: "liked" } | { kind: "tracks"; id: TrackId[] } | 
+/**  The whole library in the given order ("Canciones"), however much of it the UI loaded. */
+{ kind: "library"; id: TrackSort };
 
 /**  Audio engine state: `Idle → Loading → Playing ⇄ Paused → Ended`. */
 export type PlaybackState = "idle" | "loading" | "playing" | "paused" | "ended";
