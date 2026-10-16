@@ -1,0 +1,14 @@
+.cover,
+.placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--color-paper-3);
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--color-ink-3);
+}

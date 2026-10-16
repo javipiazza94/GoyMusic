@@ -229,3 +229,52 @@ fn an_unreadable_saved_queue_does_not_prevent_starting() {
         .expect("starts with an empty queue");
     assert_eq!(services.player_view().unwrap().track, None);
 }
+
+#[test]
+fn the_library_context_plays_every_song_in_the_chosen_order() {
+    use goymusic_library::queries::TrackSort;
+    let dir = tempfile::tempdir().unwrap();
+    let lib = library(dir.path());
+    let all = lib.services.tracks(TrackSort::Title, 0, 100).unwrap();
+    lib.services.play(PlayContext::Library(TrackSort::Title), 1).unwrap();
+    let view = lib.services.player_view().unwrap();
+    assert_eq!(view.track.unwrap().id, all[1].id);
+    let rest: Vec<TrackId> = view.up_next.iter().map(|t| t.id).collect();
+    assert_eq!(rest, all[2..].iter().map(|t| t.id).collect::<Vec<_>>());
+}
+
+#[test]
+fn queued_tracks_that_leave_the_library_are_dropped_from_the_queue() {
+    let dir = tempfile::tempdir().unwrap();
+    let lib = library(dir.path());
+    let other = dir.path().join("other");
+    album_fixture(&other, "Second", "Bea", 1);
+    let folder = lib.services.add_folder(&other).unwrap();
+    assert!(lib.services.wait_idle(LONG));
+    let gone = lib
+        .services
+        .album(
+            lib.services
+                .albums()
+                .unwrap()
+                .iter()
+                .find(|a| a.title == "Second")
+                .unwrap()
+                .id,
+        )
+        .unwrap()
+        .tracks[0]
+        .id;
+    lib.services.play(PlayContext::Album(lib.album), 0).unwrap();
+    lib.services.queue_add(vec![lib.tracks[1], gone, lib.tracks[2]]);
+
+    lib.services.remove_folder(folder.id).unwrap();
+    assert!(eventually(|| lib.services.player_view().unwrap().user_queue.len() == 2));
+
+    // the panel's indexes now match the core's: removing the second entry removes tracks[2]
+    lib.services.queue_remove(1);
+    assert!(eventually(|| {
+        let queue = lib.services.player_view().unwrap().user_queue;
+        queue.len() == 1 && queue[0].id == lib.tracks[1]
+    }));
+}

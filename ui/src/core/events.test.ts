@@ -3,7 +3,6 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { usePlayer } from "./player-store";
 import { handleCoreEvent } from "./events";
 
-vi.mock("../bindings", () => ({ commands: {}, events: {} }));
 
 let qc: QueryClient;
 beforeEach(() => {

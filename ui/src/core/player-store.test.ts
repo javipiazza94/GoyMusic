@@ -3,11 +3,6 @@ import { commands } from "../bindings";
 import { ok, view } from "../test/fixtures";
 import { usePlayer } from "./player-store";
 
-vi.mock("../bindings", () => ({
-  commands: {
-    playerView: vi.fn(), pause: vi.fn(), resume: vi.fn(), setVolume: vi.fn(),
-  },
-}));
 
 beforeEach(() => {
   vi.mocked(commands.pause).mockResolvedValue(ok(null));

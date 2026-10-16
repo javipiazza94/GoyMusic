@@ -1,0 +1,65 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) var(--player-h);
+  grid-template-areas:
+    "sidebar main"
+    "player player";
+  height: 100%;
+  background: var(--color-paper);
+}
+
+.shell[data-queue] {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--queue-w);
+  grid-template-areas:
+    "sidebar main queue"
+    "player player player";
+}
+
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none; /* focused by the skip link; it is a region, not a control */
+  min-width: 0;
+  /* views adapt to the room they get (the queue can take part of the window) */
+  container-type: inline-size;
+  /* The one atmospheric bloom: fixed to the view, it does not scroll with the content. */
+  background:
+    radial-gradient(70% 55% at 15% 0%, var(--color-bloom), transparent 70%) no-repeat,
+    var(--color-paper);
+}
+
+.player {
+  grid-area: player;
+  background: var(--color-paper-2);
+  min-width: 0;
+}
+
+/* Narrow windows: the queue floats over the view instead of squeezing it. */
+@media (max-width: 1100px) {
+  .shell[data-queue] {
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    grid-template-areas:
+      "sidebar main"
+      "player player";
+  }
+}
+
+/* Skip link: off-screen until focused with the keyboard. */
+.skip {
+  position: fixed;
+  top: var(--space-xs);
+  left: var(--space-xs);
+  z-index: 60;
+  padding: var(--space-xs) var(--space-md);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  transform: translateY(-200%);
+}
+
+.skip:focus-visible {
+  transform: none;
+}

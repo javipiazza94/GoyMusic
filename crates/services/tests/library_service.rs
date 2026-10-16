@@ -168,3 +168,43 @@ fn shutdown_during_a_scan_stops_playback_at_once() {
     shutdown.join().unwrap();
     holder.join().unwrap();
 }
+
+/// A track change right before closing makes the coordinator write the history; if another
+/// writer holds the database, that write waits. Shutdown must not wait for it to go quiet.
+#[test]
+fn shutdown_while_the_coordinator_waits_for_the_database_stops_playback_at_once() {
+    use goymusic_services::PlayContext;
+    let dir = tempfile::tempdir().unwrap();
+    let music = dir.path().join("music");
+    album_fixture(&music, "First", "Ana", 2);
+    let services = std::sync::Arc::new(start(dir.path()));
+    services.add_folder(&music).unwrap();
+    assert!(services.wait_idle(LONG));
+    let album = services.albums().unwrap()[0].id;
+
+    // take the write lock first, so the coordinator's history write for the next track waits
+    let db_path = common::config(dir.path()).db_path;
+    let (locked_tx, locked_rx) = std::sync::mpsc::channel();
+    let holder = std::thread::spawn(move || {
+        let mut db = goymusic_library::db::Db::open(&db_path).unwrap();
+        let tx = db.conn_mut().transaction().unwrap();
+        tx.execute("INSERT INTO settings (key, value) VALUES ('busy', '1')", [])
+            .unwrap();
+        locked_tx.send(()).unwrap();
+        std::thread::sleep(Duration::from_secs(3));
+        tx.commit().unwrap();
+    });
+    locked_rx.recv().unwrap();
+    services.play(PlayContext::Album(album), 0).unwrap();
+    std::thread::sleep(Duration::from_millis(300)); // the coordinator is now blocked on the lock
+
+    let closing = services.clone();
+    let shutdown = std::thread::spawn(move || closing.shutdown());
+    std::thread::sleep(Duration::from_millis(500));
+    assert!(
+        services.player_view().is_err(),
+        "music still playing 500 ms into shutdown"
+    );
+    shutdown.join().unwrap();
+    holder.join().unwrap();
+}

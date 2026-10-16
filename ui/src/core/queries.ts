@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { commands } from "../bindings";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { commands, type TrackSort } from "../bindings";
 import { unwrap } from "./result";
 
 /** Query keys. Core events invalidate by prefix: `library`, `playlists`, `likes`. */
@@ -9,6 +9,7 @@ export const keys = {
   album: (id: number) => ["library", "album", id],
   artist: (id: number) => ["library", "artist", id],
   folders: ["library", "folders"],
+  artists: ["library", "artists"],
   tracks: ["library", "tracks"],
   recent: ["library", "recent"],
   search: (q: string) => ["library", "search", q],
@@ -22,9 +23,32 @@ export function useAlbums() {
   return useQuery({ queryKey: keys.albums, queryFn: async () => unwrap(await commands.albums()) });
 }
 
-/** First page of songs by title; enough for the development shell. */
-export function useTracks() {
-  return useQuery({ queryKey: keys.tracks, queryFn: async () => unwrap(await commands.tracks("title", 0, 500)) });
+export const TRACK_PAGE = 500;
+
+/** All songs in pages of 500; the next page loads when the list nears its end. */
+export function useTrackPages(sort: TrackSort) {
+  return useInfiniteQuery({
+    queryKey: [...keys.tracks, sort],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => unwrap(await commands.tracks(sort, pageParam, TRACK_PAGE)),
+    getNextPageParam: (last, pages) => (last.length < TRACK_PAGE ? undefined : pages.length * TRACK_PAGE),
+  });
+}
+
+export function useAlbum(id: number) {
+  return useQuery({ queryKey: keys.album(id), queryFn: async () => unwrap(await commands.album(id)) });
+}
+
+export function useArtist(id: number) {
+  return useQuery({ queryKey: keys.artist(id), queryFn: async () => unwrap(await commands.artist(id)) });
+}
+
+export function useArtists() {
+  return useQuery({ queryKey: keys.artists, queryFn: async () => unwrap(await commands.artists()) });
+}
+
+export function useRecentAlbums() {
+  return useQuery({ queryKey: keys.recent, queryFn: async () => unwrap(await commands.recentAlbums(12)) });
 }
 
 export function useFolders() {
@@ -41,4 +65,35 @@ export const artUrl = (albumId: number, px: 200 | 600) => `art://localhost/album
 export function formatMs(ms: number): string {
   const total = Math.floor(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+export function usePlaylists() {
+  return useQuery({ queryKey: keys.playlists, queryFn: async () => unwrap(await commands.playlists()) });
+}
+
+export function usePlaylistFolders() {
+  return useQuery({
+    queryKey: [...keys.playlists, "folders"],
+    queryFn: async () => unwrap(await commands.playlistFolders()),
+  });
+}
+
+export function usePlaylist(id: number) {
+  return useQuery({ queryKey: keys.playlist(id), queryFn: async () => unwrap(await commands.playlist(id)) });
+}
+
+export function useLikedTracks() {
+  return useQuery({ queryKey: [...keys.likes, "tracks"], queryFn: async () => unwrap(await commands.likedTracks()) });
+}
+
+export const SEARCH_LIMIT = 20;
+
+/** Results while typing: keeps the previous answer on screen until the new one arrives. */
+export function useSearch(q: string) {
+  return useQuery({
+    queryKey: keys.search(q),
+    queryFn: async () => unwrap(await commands.search(q, SEARCH_LIMIT)),
+    enabled: q.trim().length > 0,
+    placeholderData: keepPreviousData,
+  });
 }

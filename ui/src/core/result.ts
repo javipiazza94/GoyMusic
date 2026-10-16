@@ -8,9 +8,11 @@ export class CommandError extends Error {
   }
 }
 
-type CommandResult<T> = { status: "ok"; data: T } | { status: "error"; error: ServiceError };
+export type CommandResult<T> = { status: "ok"; data: T } | { status: "error"; error: ServiceError };
 
 export function unwrap<T>(result: CommandResult<T>): T {
   if (result.status === "error") throw new CommandError(result.error);
   return result.data;
 }
+
+export const isNotFound = (e: unknown): boolean => e instanceof CommandError && e.error.code === "notFound";

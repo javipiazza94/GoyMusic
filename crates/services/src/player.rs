@@ -10,6 +10,7 @@ use goymusic_core::model::Track;
 use goymusic_core::queue::RepeatMode;
 use goymusic_core::{AlbumId, ArtistId, PlaylistId, TrackId};
 use goymusic_library::db::Db;
+use goymusic_library::queries::TrackSort;
 use goymusic_library::{playlists, queries, state};
 use serde::{Deserialize, Serialize};
 
@@ -32,6 +33,8 @@ pub enum PlayContext {
     Playlist(PlaylistId),
     Liked,
     Tracks(Vec<TrackId>),
+    /// The whole library in the given order ("Canciones"), however much of it the UI loaded.
+    Library(TrackSort),
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -109,6 +112,7 @@ impl Services {
             PlayContext::Playlist(id) => playlists::items(&db, id)?.into_iter().map(|i| i.track.id).collect(),
             PlayContext::Liked => ids(playlists::liked_tracks(&db)?),
             PlayContext::Tracks(tracks) => tracks,
+            PlayContext::Library(sort) => ids(queries::tracks(&db, sort, 0, u32::MAX)?),
         })
     }
 

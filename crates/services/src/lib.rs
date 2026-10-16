@@ -101,11 +101,12 @@ impl Services {
         if self.stopped.swap(true, Ordering::SeqCst) {
             return;
         }
-        // the coordinator first, so it cannot overwrite the final save below
-        self.coordinator.stop();
+        // silence at once: the coordinator may be waiting on the database, so it is stopped
+        // afterwards; with no player left it cannot save the queue over the final save below
         let snapshot = self.snapshot();
-        // silence at once; the scan is cancelled rather than awaited
         self.player.lock().expect("player poisoned").take();
+        self.coordinator.stop();
+        // the scan is cancelled rather than awaited
         self.scans.stop();
         self.watcher.stop();
         if let Some(snapshot) = snapshot {

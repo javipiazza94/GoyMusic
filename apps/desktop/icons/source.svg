@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- GoyMusic app icon: a lit brass filament ring (the player's progress line) on Lumen night. -->
+  <defs>
+    <radialGradient id="bloom" cx="50%" cy="46%" r="55%">
+      <stop offset="0" stop-color="oklch(76% 0.17 50)" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="oklch(76% 0.17 50)" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="oklch(13% 0.014 265)"/>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bloom)"/>
+  <circle cx="512" cy="512" r="250" fill="none" stroke="oklch(22% 0.018 265)" stroke-width="44"/>
+  <path d="M512 262 A250 250 0 1 1 296 386" fill="none" stroke="oklch(76% 0.17 50)" stroke-width="44"
+        stroke-linecap="round" filter="url(#glow)"/>
+  <circle cx="512" cy="512" r="64" fill="oklch(96% 0.006 262)"/>
+</svg>
