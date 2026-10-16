@@ -5,6 +5,7 @@ pub mod decoder;
 pub mod engine;
 pub mod error;
 pub mod gain;
+pub mod player;
 pub mod sink;
 
 pub use error::AudioError;
