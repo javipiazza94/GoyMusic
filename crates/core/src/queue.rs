@@ -155,6 +155,12 @@ impl Queue {
         self.advance(false)
     }
 
+    /// What [`Queue::on_track_ended`] would return, without changing the queue. The audio engine
+    /// uses it to preload the next track for gapless playback.
+    pub fn peek_next(&self) -> Option<TrackId> {
+        self.clone().on_track_ended()
+    }
+
     /// The current track finished playing on its own.
     pub fn on_track_ended(&mut self) -> Option<TrackId> {
         self.advance(true)

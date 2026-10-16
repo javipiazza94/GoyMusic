@@ -98,3 +98,21 @@ fn queue_state_roundtrips_through_json() {
     let json = serde_json::to_string(&q).unwrap();
     assert_eq!(serde_json::from_str::<Queue>(&json).unwrap(), q);
 }
+
+#[test]
+fn peek_next_matches_on_track_ended_without_mutating() {
+    use goymusic_core::queue::RepeatMode;
+    let mut q = Queue::new();
+    q.play_context(ids(2), 1, &mut rng());
+    assert_eq!(q.peek_next(), None);
+    q.set_repeat(RepeatMode::All);
+    assert_eq!(q.peek_next(), Some(TrackId(1)));
+    q.set_repeat(RepeatMode::One);
+    assert_eq!(q.peek_next(), Some(TrackId(2)));
+    q.queue_add(&[TrackId(9)]);
+    q.set_repeat(RepeatMode::Off);
+    let before = q.clone();
+    assert_eq!(q.peek_next(), Some(TrackId(9)));
+    assert_eq!(q, before);
+    assert_eq!(q.on_track_ended(), Some(TrackId(9)));
+}

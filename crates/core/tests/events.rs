@@ -25,3 +25,21 @@ fn events_serialize_with_a_type_tag() {
     let json = serde_json::to_string(&Event::ScanProgress { done: 3, total: 9 }).unwrap();
     assert_eq!(json, r#"{"type":"scanProgress","done":3,"total":9}"#);
 }
+
+#[test]
+fn player_events_use_camel_case_fields() {
+    use goymusic_core::events::PlaybackState;
+    use goymusic_core::TrackId;
+    let json = serde_json::to_string(&Event::PositionChanged {
+        track: TrackId(4),
+        position_ms: 1500,
+    })
+    .unwrap();
+    assert_eq!(json, r#"{"type":"positionChanged","track":4,"positionMs":1500}"#);
+    let json = serde_json::to_string(&Event::PlayerStateChanged {
+        state: PlaybackState::Playing,
+        track: None,
+    })
+    .unwrap();
+    assert_eq!(json, r#"{"type":"playerStateChanged","state":"playing","track":null}"#);
+}
