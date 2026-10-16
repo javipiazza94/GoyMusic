@@ -1,3 +1,4 @@
+import { ContextMenu } from "../menu/ContextMenu";
 import { PlayerBar } from "../player/PlayerBar";
 import { useState } from "react";
 import { AppRoutes } from "./routes";
@@ -26,6 +27,7 @@ export function AppShell() {
       <footer className={styles.player}>
         <PlayerBar />
       </footer>
+      <ContextMenu />
     </div>
   );
 }

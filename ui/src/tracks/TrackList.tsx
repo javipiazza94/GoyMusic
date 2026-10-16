@@ -1,13 +1,16 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
-import { Link } from "react-router";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { Link, useNavigate } from "react-router";
 import type { Track } from "../bindings";
 import { useScrollParent } from "../app/scroll-parent";
 import { Icon } from "../components/Icon";
 import { useArtistIndex } from "../core/artist-index";
 import { useLikedIds, useToggleLike } from "../core/likes";
 import { usePlayer } from "../core/player-store";
-import { formatMs } from "../core/queries";
+import { formatMs, usePlaylists } from "../core/queries";
+import { carriesTracks, readDrag, writeDrag, type DragPayload } from "../dnd/drag";
+import { useMenu, type MenuItem } from "../menu/menu-store";
+import { trackMenu } from "./track-menu";
 import { emptySelection, nextSelection, type Selection } from "./selection";
 import styles from "./TrackList.module.css";
 
@@ -23,8 +26,15 @@ export interface TrackListProps {
   onPlay(index: number): void;
   /** Called when the last rows come into view, to load more. */
   onEndReached?(): void;
+  /** Extra context-menu entries for the selected rows (e.g. "Quitar de la playlist"). */
+  menuExtra?(rows: TrackRow[]): MenuItem[];
+  /** Rows can be dragged to a new place in this same list. */
+  onReorder?(from: number, to: number): void;
   label: string;
 }
+
+/** The drag in progress; `dragover` cannot read the payload, so lists check its source here. */
+let activeDrag: DragPayload | null = null;
 
 const ROW_HEIGHT = 52;
 const END_THRESHOLD = 20;
@@ -48,7 +58,14 @@ function Artists({ names }: { names: string[] }) {
   );
 }
 
-export function TrackList({ rows, numbering = "index", showAlbum = true, onPlay, onEndReached, label }: TrackListProps) {
+export function TrackList(props: TrackListProps) {
+  const { rows, numbering = "index", showAlbum = true, onPlay, onEndReached, menuExtra, onReorder, label } = props;
+  const listId = useId();
+  const navigate = useNavigate();
+  const playlists = usePlaylists().data ?? [];
+  const artistIndex = useArtistIndex();
+  const showMenu = useMenu((s) => s.show);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
   const scrollParent = useScrollParent();
   const ownScroller = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -108,10 +125,53 @@ export function TrackList({ rows, numbering = "index", showAlbum = true, onPlay,
     } else if (e.key === "Home" || e.key === "End") {
       e.preventDefault();
       moveFocus(e.key === "Home" ? 0 : rows.length - 1);
+    } else if ((e.key === "F10" && e.shiftKey) || e.key === "ContextMenu") {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      openMenu(index, rect.left + 48, rect.bottom, e.currentTarget as HTMLElement);
     } else if (e.key === "Enter") {
       e.preventDefault();
       onPlay(index);
     }
+  }
+
+  /** The rows an action applies to: the selection if `index` is in it, otherwise just that row. */
+  function targetIndexes(index: number): number[] {
+    return selection.keys.has(index) ? [...selection.keys].sort((a, b) => a - b) : [index];
+  }
+
+  function openMenu(index: number, x: number, y: number, returnFocus: HTMLElement) {
+    if (!selection.keys.has(index)) setSelection({ keys: new Set([index]), anchor: index });
+    const target = targetIndexes(index).map((i) => rows[i]);
+    const items = trackMenu(
+      target.map((r) => r.track),
+      { playlists, navigate, liked, artistId: (name) => artistIndex.get(name.toLowerCase()) ?? null },
+    );
+    showMenu(x, y, menuExtra ? [...items, ...menuExtra(target)] : items, returnFocus);
+  }
+
+  function onDragStart(e: DragEvent, index: number) {
+    const indexes = targetIndexes(index);
+    activeDrag = { ids: indexes.map((i) => rows[i].track.id), from: { list: listId, indexes } };
+    writeDrag(e.dataTransfer, activeDrag);
+  }
+
+  const reorderingHere = () => !!onReorder && activeDrag?.from?.list === listId && activeDrag.from.indexes.length === 1;
+
+  function onDragOver(e: DragEvent, index: number) {
+    if (!carriesTracks(e.dataTransfer) || !reorderingHere()) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropIndex(index);
+  }
+
+  function onDrop(e: DragEvent, index: number) {
+    setDropIndex(null);
+    const payload = readDrag(e.dataTransfer);
+    if (!onReorder || payload?.from?.list !== listId || payload.from.indexes.length !== 1) return;
+    e.preventDefault();
+    const from = payload.from.indexes[0];
+    if (from !== index) onReorder(from, index);
   }
 
   function onClick(e: MouseEvent, index: number) {
@@ -155,6 +215,20 @@ export function TrackList({ rows, numbering = "index", showAlbum = true, onPlay,
               onClick={(e) => onClick(e, item.index)}
               onDoubleClick={() => onPlay(item.index)}
               onFocus={() => setFocusIndex(item.index)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                openMenu(item.index, e.clientX, e.clientY, e.currentTarget);
+              }}
+              draggable
+              data-drop={dropIndex === item.index || undefined}
+              onDragStart={(e) => onDragStart(e, item.index)}
+              onDragEnd={() => {
+                activeDrag = null;
+                setDropIndex(null);
+              }}
+              onDragOver={(e) => onDragOver(e, item.index)}
+              onDragLeave={() => setDropIndex((d) => (d === item.index ? null : d))}
+              onDrop={(e) => onDrop(e, item.index)}
               onKeyDown={(e) => onKeyDown(e, item.index)}
             >
               <span role="gridcell" className={styles.number}>

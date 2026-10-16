@@ -16,3 +16,7 @@ export function unwrap<T>(result: CommandResult<T>): T {
 }
 
 export const isNotFound = (e: unknown): boolean => e instanceof CommandError && e.error.code === "notFound";
+
+/** Fires a command whose effect arrives through the core's events; failures are logged. */
+export const runCommand = (call: Promise<CommandResult<unknown>>): void =>
+  void call.then(unwrap).catch(console.error);

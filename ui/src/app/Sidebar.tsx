@@ -2,17 +2,20 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { NavLink, useNavigate } from "react-router";
 import { commands, type Playlist } from "../bindings";
 import { Icon, type IconName } from "../components/Icon";
+import { useLikedIds } from "../core/likes";
 import { usePlaylistFolders, usePlaylists } from "../core/queries";
-import { unwrap } from "../core/result";
+import { dropTarget } from "../dnd/drag";
+import { runCommand, unwrap } from "../core/result";
 import styles from "./Sidebar.module.css";
 
 const NEW_PLAYLIST = "Nueva playlist";
 const NEW_FOLDER = "Nueva carpeta";
 const IMPORT = "Importar M3U8";
 
-function NavItem({ to, icon, label }: { to: string; icon: IconName; label: string }) {
+
+function NavItem({ to, icon, label, drop }: { to: string; icon: IconName; label: string; drop?: ReturnType<typeof dropTarget> }) {
   return (
-    <NavLink to={to} end className={styles.navItem}>
+    <NavLink to={to} end className={styles.navItem} {...drop}>
       <Icon name={icon} />
       <span>{label}</span>
     </NavLink>
@@ -22,7 +25,11 @@ function NavItem({ to, icon, label }: { to: string; icon: IconName; label: strin
 function PlaylistLink({ playlist }: { playlist: Playlist }) {
   return (
     <li>
-      <NavLink to={`/playlist/${playlist.id}`} className={styles.playlist}>
+      <NavLink
+        to={`/playlist/${playlist.id}`}
+        className={styles.playlist}
+        {...dropTarget(({ ids }) => runCommand(commands.addToPlaylist(playlist.id, ids)))}
+      >
         {playlist.name}
       </NavLink>
     </li>
@@ -45,6 +52,7 @@ function ActionButton({ label, icon, onClick }: { label: string; icon: IconName;
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const liked = useLikedIds();
   const playlists = usePlaylists().data ?? [];
   const folders = usePlaylistFolders().data ?? [];
   const inFolder = (p: Playlist) => folders.some((f) => f.id === p.folderId);
@@ -72,7 +80,12 @@ export function Sidebar() {
       <nav aria-label="Principal" className={styles.nav}>
         <NavItem to="/" icon="home" label="Inicio" />
         <NavItem to="/search" icon="search" label="Buscar" />
-        <NavItem to="/collection/tracks" icon="heart" label="Me gusta" />
+        <NavItem
+          to="/collection/tracks"
+          icon="heart"
+          label="Me gusta"
+          drop={dropTarget(({ ids }) => ids.filter((id) => !liked.has(id)).forEach((id) => runCommand(commands.like(id))))}
+        />
       </nav>
 
       <div className={styles.section}>

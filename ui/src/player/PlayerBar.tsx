@@ -4,7 +4,7 @@ import { Icon } from "../components/Icon";
 import { useArtistIndex } from "../core/artist-index";
 import { useLikedIds, useToggleLike } from "../core/likes";
 import { usePlayer } from "../core/player-store";
-import { unwrap } from "../core/result";
+import { runCommand } from "../core/result";
 import { useUi } from "../app/ui-store";
 import { Cover } from "../library/Cover";
 import styles from "./PlayerBar.module.css";
@@ -14,8 +14,6 @@ import { VolumeControl } from "./VolumeControl";
 const nextRepeat: Record<RepeatMode, RepeatMode> = { off: "all", all: "one", one: "off" };
 const repeatLabel: Record<RepeatMode, string> = { off: "Repetir: no", all: "Repetir: todo", one: "Repetir: una" };
 
-/** Fires a player command; its effect arrives through the core's events. */
-const run = (call: Promise<Parameters<typeof unwrap>[0]>) => void call.then(unwrap).catch(console.error);
 
 function Artists({ track }: { track: Track }) {
   const index = useArtistIndex();
@@ -90,11 +88,11 @@ export function PlayerBar() {
             aria-label="Aleatorio"
             aria-pressed={view?.shuffle ?? false}
             disabled={empty}
-            onClick={() => run(commands.setShuffle(!view?.shuffle))}
+            onClick={() => runCommand(commands.setShuffle(!view?.shuffle))}
           >
             <Icon name="shuffle" />
           </button>
-          <button type="button" className={styles.iconButton} aria-label="Anterior" disabled={empty} onClick={() => run(commands.previous())}>
+          <button type="button" className={styles.iconButton} aria-label="Anterior" disabled={empty} onClick={() => runCommand(commands.previous())}>
             <Icon name="previous" />
           </button>
           <button
@@ -106,7 +104,7 @@ export function PlayerBar() {
           >
             <Icon name={playing ? "pause" : "play"} size={22} />
           </button>
-          <button type="button" className={styles.iconButton} aria-label="Siguiente" disabled={empty} onClick={() => run(commands.next())}>
+          <button type="button" className={styles.iconButton} aria-label="Siguiente" disabled={empty} onClick={() => runCommand(commands.next())}>
             <Icon name="next" />
           </button>
           <button
@@ -115,7 +113,7 @@ export function PlayerBar() {
             aria-label={repeatLabel[repeat]}
             aria-pressed={repeat !== "off"}
             disabled={empty}
-            onClick={() => run(commands.setRepeat(nextRepeat[repeat]))}
+            onClick={() => runCommand(commands.setRepeat(nextRepeat[repeat]))}
           >
             <Icon name={repeat === "one" ? "repeatOne" : "repeat"} />
           </button>

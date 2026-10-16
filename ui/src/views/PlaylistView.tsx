@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { commands, type Playlist } from "../bindings";
 import { playFrom } from "../core/play";
 import { usePlaylist, usePlaylistFolders } from "../core/queries";
-import { isNotFound, unwrap } from "../core/result";
+import { isNotFound, runCommand, unwrap } from "../core/result";
 import { TrackList } from "../tracks/TrackList";
 import { ConfirmInline } from "./ConfirmInline";
 import { countLabel, totalDuration } from "./format";
@@ -124,6 +124,14 @@ export function PlaylistView() {
           label={`Canciones de ${playlist.name}`}
           rows={items.map((i) => ({ track: i.track, key: `${i.position}-${i.track.id}`, position: i.position }))}
           onPlay={(index) => playFrom({ kind: "playlist", id }, index)}
+          onReorder={(from, to) => runCommand(commands.movePlaylistItem(id, items[from].position, items[to].position))}
+          menuExtra={(rows) => [
+            {
+              label: "Quitar de la playlist",
+              danger: true,
+              onSelect: () => runCommand(commands.removeFromPlaylist(id, rows.map((r) => r.position!))),
+            },
+          ]}
         />
       )}
     </section>
