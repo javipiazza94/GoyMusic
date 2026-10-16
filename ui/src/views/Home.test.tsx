@@ -24,7 +24,8 @@ test("home falls back to songs when there are no albums", async () => {
   renderAt("/");
   expect((await screen.findByRole("tab", { name: "Canciones" })).getAttribute("aria-selected")).toBe("true");
   fireEvent.doubleClick(await screen.findByText("Clarity"));
-  expect(commands.play).toHaveBeenCalledWith({ kind: "tracks", id: [5, 9] }, 1);
+  // the whole library in the shown order, not only the rows loaded so far
+  expect(commands.play).toHaveBeenCalledWith({ kind: "library", id: "title" }, 1);
 });
 
 test("home remembers the chosen tab", async () => {

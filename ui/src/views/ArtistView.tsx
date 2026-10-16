@@ -6,7 +6,7 @@ import { isNotFound } from "../core/result";
 import { AlbumGrid } from "../library/AlbumGrid";
 import { TrackList } from "../tracks/TrackList";
 import { countLabel } from "./format";
-import { NotFound } from "./NotFound";
+import { LoadError, NotFound } from "./NotFound";
 import { PlayButton, ViewHeader } from "./ViewHeader";
 import styles from "./views.module.css";
 
@@ -14,6 +14,7 @@ export function ArtistView() {
   const id = Number(useParams().id);
   const { data, error } = useArtist(id);
   if (isNotFound(error)) return <NotFound what="Este artista ya no está en tu biblioteca." />;
+  if (error) return <LoadError />;
   if (!data) return null;
   const { artist, albums, tracks } = data;
   const context: PlayContext = { kind: "artist", id };

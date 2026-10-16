@@ -1,14 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { commands } from "../bindings";
+import { commands, type Artist } from "../bindings";
 import { keys } from "./queries";
 import { unwrap } from "./result";
+
+// Module-level so its reference is stable: Query re-runs an inline `select` on every render.
+const toIndex = (artists: Artist[]) => new Map(artists.map((a) => [a.name.toLowerCase(), a.id]));
 
 /** Name (lower case) → artist id. Tracks carry artist names only, so links resolve the id here. */
 export function useArtistIndex(): Map<string, number> {
   const { data } = useQuery({
     queryKey: keys.artists,
     queryFn: async () => unwrap(await commands.artists()),
-    select: (artists) => new Map(artists.map((a) => [a.name.toLowerCase(), a.id])),
+    select: toIndex,
   });
   return data ?? EMPTY;
 }

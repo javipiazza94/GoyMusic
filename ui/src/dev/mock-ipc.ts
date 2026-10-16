@@ -72,6 +72,7 @@ function contextTracks(c: PlayContext): number[] {
     case "playlist": return items.get(c.id) ?? [];
     case "liked": return [...liked];
     case "tracks": return c.id;
+    case "library": return [...tracks].sort((x, y) => x.title.localeCompare(y.title)).map((t) => t.id);
   }
 }
 

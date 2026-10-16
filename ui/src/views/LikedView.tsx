@@ -2,11 +2,13 @@ import { playFrom } from "../core/play";
 import { useLikedTracks } from "../core/queries";
 import { TrackList } from "../tracks/TrackList";
 import { countLabel, totalDuration } from "./format";
+import { LoadError } from "./NotFound";
 import { PlayButton, ViewHeader } from "./ViewHeader";
 import styles from "./views.module.css";
 
 export function LikedView() {
-  const tracks = useLikedTracks().data;
+  const { data: tracks, error } = useLikedTracks();
+  if (error) return <LoadError />;
   if (!tracks) return null;
   return (
     <section className={styles.page}>

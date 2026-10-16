@@ -59,7 +59,7 @@ function Songs() {
         label="Canciones"
         rows={rows}
         onEndReached={loadMore}
-        onPlay={(index) => playFrom({ kind: "tracks", id: rows.map((r) => r.track.id) }, index)}
+        onPlay={(index) => playFrom({ kind: "library", id: sort }, index)}
       />
     </>
   );

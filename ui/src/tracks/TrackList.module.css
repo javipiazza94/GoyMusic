@@ -52,7 +52,8 @@
 }
 
 .body .row[aria-selected="true"] {
-  background: var(--color-paper-3);
+  background: var(--color-selected);
+  color: var(--color-ink);
 }
 
 .body .row:focus-visible {

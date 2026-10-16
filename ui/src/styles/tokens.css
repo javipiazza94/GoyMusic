@@ -16,6 +16,7 @@
   --color-accent-2: oklch(68% 0.16 18);
   --color-glow: oklch(80% 0.16 50 / 0.42);
   --color-bloom: oklch(76% 0.17 50 / 0.08);
+  --color-selected: oklch(76% 0.17 50 / 0.16);
   --color-focus: var(--color-accent);
   --color-shadow: oklch(6% 0.02 265 / 0.6);
 
@@ -71,5 +72,6 @@
   --color-accent-2: oklch(52% 0.19 18);
   --color-glow: transparent;
   --color-bloom: oklch(46% 0.24 268 / 0.06);
+  --color-selected: oklch(46% 0.24 268 / 0.12);
   --color-shadow: oklch(18% 0.014 265 / 0.18);
 }

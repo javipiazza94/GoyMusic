@@ -1,5 +1,5 @@
 import "./styles/base.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router";
@@ -13,9 +13,10 @@ async function start() {
   if (mock) await import("./dev/mock-ipc");
   const { connectCoreEvents } = await import("./core/events");
   const { usePlayer } = await import("./core/player-store");
+  const { createQueryClient } = await import("./core/query-client");
 
   initTheme();
-  const queryClient = new QueryClient();
+  const queryClient = createQueryClient();
   void connectCoreEvents(queryClient);
   void usePlayer.getState().refresh().catch(() => {});
 

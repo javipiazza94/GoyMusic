@@ -1,9 +1,10 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { render, type RenderResult } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter, useLocation } from "react-router";
 import { AppShell } from "../app/AppShell";
+import { createQueryClient } from "../core/query-client";
 
 let currentPath = "";
 
@@ -18,7 +19,7 @@ export function renderAt(
   path: string,
   ui: ReactNode = <AppShell />,
 ): RenderResult & { user: UserEvent; qc: QueryClient; path(): string } {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const qc = createQueryClient({ retryDelay: 0 });
   const user = userEvent.setup();
   const result = render(
     <QueryClientProvider client={qc}>

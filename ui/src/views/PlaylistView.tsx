@@ -9,7 +9,7 @@ import { reportError, runCommand } from "../core/report";
 import { TrackList } from "../tracks/TrackList";
 import { ConfirmInline } from "./ConfirmInline";
 import { countLabel, totalDuration } from "./format";
-import { NotFound } from "./NotFound";
+import { LoadError, NotFound } from "./NotFound";
 import { PlayButton, ViewHeader } from "./ViewHeader";
 import styles from "./views.module.css";
 
@@ -55,6 +55,7 @@ export function PlaylistView() {
   const [confirming, setConfirming] = useState(false);
 
   if (isNotFound(error)) return <NotFound what="Esta playlist ya no existe." />;
+  if (error) return <LoadError />;
   if (!data) return null;
   const { playlist, items } = data;
   const tracks = items.map((i) => i.track);

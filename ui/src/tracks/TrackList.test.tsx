@@ -1,4 +1,5 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import { useState } from "react";
 import { expect, test, vi } from "vitest";
 import type { Track } from "../bindings";
 import { usePlayer } from "../core/player-store";
@@ -73,4 +74,39 @@ test("rows without album or artists still render", () => {
 test("links the album of a row", () => {
   renderAt("/", <TrackList label="Canciones" rows={rowsOf(1)} onPlay={() => {}} />);
   expect(screen.getByRole("link", { name: "Album" }).getAttribute("href")).toBe("/album/1");
+});
+
+test("end moves focus to the last row even when it was not rendered yet", async () => {
+  const { user } = renderAt("/", <TrackList label="Canciones" rows={rowsOf(200)} onPlay={() => {}} />);
+  await user.click(screen.getByText("Song 1"));
+  await user.keyboard("{End}");
+  const scroller = screen.getByRole("grid", { name: "Canciones" }).parentElement!;
+  Object.defineProperty(scroller, "scrollTop", { configurable: true, value: 200 * 52 });
+  fireEvent.scroll(scroller);
+  await vi.waitFor(() => expect(document.activeElement?.textContent).toContain("Song 200"));
+});
+
+let setRows: (rows: TrackRow[]) => void = () => {};
+function Harness({ initial }: { initial: TrackRow[] }) {
+  const [rows, set] = useState(initial);
+  setRows = set;
+  return <TrackList label="Canciones" rows={rows} onPlay={() => {}} />;
+}
+
+test("the selection follows the rows when more of them load or they are reordered", async () => {
+  const first = rowsOf(10);
+  const { user } = renderAt("/", <Harness initial={first} />);
+  await user.click(screen.getByText("Song 2"));
+  await user.keyboard("{Shift>}");
+  await user.click(screen.getByText("Song 3"));
+  await user.keyboard("{/Shift}");
+  const selected = () =>
+    bodyRows()
+      .filter((r) => r.getAttribute("aria-selected") === "true")
+      .map((r) => within(r).getByText(/Song/).textContent)
+      .sort();
+  act(() => setRows(rowsOf(20)));
+  expect(selected()).toEqual(["Song 2", "Song 3"]);
+  act(() => setRows([...first].reverse()));
+  expect(selected()).toEqual(["Song 2", "Song 3"]);
 });

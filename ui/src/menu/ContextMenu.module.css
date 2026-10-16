@@ -4,6 +4,9 @@
   display: grid;
   min-width: 13rem;
   max-width: 20rem;
+  /* long playlist lists scroll inside the menu instead of running off the window */
+  max-height: calc(100vh - 2 * var(--space-2xs));
+  overflow-y: auto;
   padding: var(--space-2xs);
   border-radius: var(--radius-md);
   background: var(--color-paper-3);

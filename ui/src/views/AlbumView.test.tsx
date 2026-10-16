@@ -3,6 +3,7 @@ import { expect, test, vi } from "vitest";
 import { commands } from "../bindings";
 import { ok, track } from "../test/fixtures";
 import { renderAt } from "../test/render";
+import { usePlayer } from "../core/player-store";
 
 const album = { id: 7, title: "OK Computer", artist: "Radiohead", year: 1997, trackCount: 3 };
 
@@ -21,4 +22,11 @@ test("an album that no longer exists shows not found", async () => {
   vi.mocked(commands.album).mockResolvedValue({ status: "error", error: { code: "notFound", message: "album 7" } });
   renderAt("/album/7");
   expect(await screen.findByRole("heading", { name: "No encontrado" })).toBeTruthy();
+});
+
+test("an album that fails to load says so and reports the error", async () => {
+  vi.mocked(commands.album).mockResolvedValue({ status: "error", error: { code: "database", message: "disk I/O error" } });
+  renderAt("/album/7");
+  expect(await screen.findByText("No se pudo cargar esta vista.")).toBeTruthy();
+  await vi.waitFor(() => expect(usePlayer.getState().grave).toBe("disk I/O error"));
 });

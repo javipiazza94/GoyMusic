@@ -1,5 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useId, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Track } from "../bindings";
 import { useScrollParent } from "../app/scroll-parent";
@@ -11,7 +11,7 @@ import { formatMs, usePlaylists } from "../core/queries";
 import { carriesTracks, readDrag, writeDrag, type DragPayload } from "../dnd/drag";
 import { useMenu, type MenuItem } from "../menu/menu-store";
 import { trackMenu } from "./track-menu";
-import { emptySelection, nextSelection, type Selection } from "./selection";
+import { nextSelection, type Selection } from "./selection";
 import styles from "./TrackList.module.css";
 import { reportError } from "../core/report";
 
@@ -71,8 +71,26 @@ export function TrackList(props: TrackListProps) {
   const ownScroller = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
-  const [selection, setSelection] = useState<Selection>(emptySelection);
-  const [focusIndex, setFocusIndex] = useState(0);
+  // The selection is kept by row key, so it survives more pages loading or a new order.
+  const [picked, setPicked] = useState<{ keys: Set<string>; anchor: string | null }>({ keys: new Set(), anchor: null });
+  const indexOf = useMemo(() => new Map(rows.map((r, i) => [r.key, i])), [rows]);
+  const selection: Selection = useMemo(() => {
+    const keys = new Set<number>();
+    for (const key of picked.keys) {
+      const index = indexOf.get(key);
+      if (index !== undefined) keys.add(index);
+    }
+    return { keys, anchor: picked.anchor === null ? null : (indexOf.get(picked.anchor) ?? null) };
+  }, [picked, indexOf]);
+  const setSelection = (next: Selection | ((s: Selection) => Selection)) => {
+    const value = typeof next === "function" ? next(selection) : next;
+    setPicked({
+      keys: new Set([...value.keys].map((i) => rows[i].key)),
+      anchor: value.anchor === null ? null : (rows[value.anchor]?.key ?? null),
+    });
+  };
+  const [focusIndexRaw, setFocusIndex] = useState(0);
+  const focusIndex = Math.min(focusIndexRaw, Math.max(0, rows.length - 1));
   const pendingFocus = useRef(false);
   const currentId = usePlayer((s) => s.view?.track?.id ?? null);
   const liked = useLikedIds();
@@ -83,11 +101,6 @@ export function TrackList(props: TrackListProps) {
     const top = gridRef.current.getBoundingClientRect().top - scrollParent.getBoundingClientRect().top;
     setScrollMargin(top + scrollParent.scrollTop);
   }, [scrollParent, rows.length]);
-
-  useEffect(() => {
-    setSelection(emptySelection);
-    setFocusIndex(0);
-  }, [rows.length]);
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -106,8 +119,11 @@ export function TrackList(props: TrackListProps) {
 
   useEffect(() => {
     if (!pendingFocus.current) return;
+    // the row may not be rendered yet (scrolling to it is asynchronous): try again on the next render
+    const row = gridRef.current?.querySelector<HTMLElement>(`[data-index="${focusIndex}"]`);
+    if (!row) return;
     pendingFocus.current = false;
-    gridRef.current?.querySelector<HTMLElement>(`[data-index="${focusIndex}"]`)?.focus();
+    row.focus();
   }, [focusIndex, items]);
 
   function moveFocus(index: number) {
