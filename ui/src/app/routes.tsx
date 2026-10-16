@@ -2,7 +2,9 @@ import { Route, Routes } from "react-router";
 import { AlbumView } from "../views/AlbumView";
 import { ArtistView } from "../views/ArtistView";
 import { Home } from "../views/Home";
+import { LikedView } from "../views/LikedView";
 import { NotFound } from "../views/NotFound";
+import { PlaylistView } from "../views/PlaylistView";
 import { SettingsView } from "../views/SettingsView";
 import styles from "../views/views.module.css";
 
@@ -22,8 +24,8 @@ export function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/album/:id" element={<AlbumView />} />
       <Route path="/artist/:id" element={<ArtistView />} />
-      <Route path="/playlist/:id" element={<Placeholder title="Playlist" />} />
-      <Route path="/collection/tracks" element={<Placeholder title="Me gusta" />} />
+      <Route path="/playlist/:id" element={<PlaylistView />} />
+      <Route path="/collection/tracks" element={<LikedView />} />
       <Route path="/search" element={<Placeholder title="Buscar" />} />
       <Route path="/settings" element={<SettingsView />} />
       <Route path="*" element={<NotFound />} />

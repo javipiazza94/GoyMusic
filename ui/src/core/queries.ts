@@ -77,3 +77,11 @@ export function usePlaylistFolders() {
     queryFn: async () => unwrap(await commands.playlistFolders()),
   });
 }
+
+export function usePlaylist(id: number) {
+  return useQuery({ queryKey: keys.playlist(id), queryFn: async () => unwrap(await commands.playlist(id)) });
+}
+
+export function useLikedTracks() {
+  return useQuery({ queryKey: [...keys.likes, "tracks"], queryFn: async () => unwrap(await commands.likedTracks()) });
+}
