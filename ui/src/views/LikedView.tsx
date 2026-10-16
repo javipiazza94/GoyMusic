@@ -15,6 +15,8 @@ export function LikedView() {
       <ViewHeader
         kind="COLECCIÓN"
         title="Me gusta"
+        seed="Me gusta"
+        cover={{ albumId: null }}
         meta={[countLabel(tracks.length, "canción", "canciones"), ...(tracks.length ? [totalDuration(tracks)] : [])]}
         actions={tracks.length > 0 && <PlayButton name="Me gusta" onClick={() => playFrom({ kind: "liked" }, 0)} />}
       />

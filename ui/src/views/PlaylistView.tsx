@@ -74,6 +74,8 @@ export function PlaylistView() {
     <section className={styles.page}>
       <ViewHeader
         kind="PLAYLIST"
+        seed={playlist.name}
+        cover={{ albumId: null }}
         title={renaming ? <RenameField playlist={playlist} onDone={() => setRenaming(false)} /> : playlist.name}
         meta={[countLabel(items.length, "canción", "canciones"), ...(items.length ? [totalDuration(tracks)] : [])]}
         actions={

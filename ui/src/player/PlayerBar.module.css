@@ -172,7 +172,7 @@
   width: var(--progress);
   height: 3px;
   border-radius: var(--radius-pill);
-  background: var(--color-accent);
+  background: linear-gradient(90deg, var(--color-accent-2), var(--color-accent));
   box-shadow: 0 0 10px 1px var(--color-glow);
   pointer-events: none;
 }

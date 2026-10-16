@@ -14,7 +14,7 @@ function Item({ track, children }: { track: Track; children?: React.ReactNode })
   return (
     <>
       <div className={styles.thumb}>
-        <Cover albumId={track.albumId} size={200} />
+        <Cover albumId={track.albumId} size={200} seed={track.album ?? track.title} />
       </div>
       <div className={styles.text}>
         <span className={styles.title}>{track.title}</span>

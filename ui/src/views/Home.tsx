@@ -2,7 +2,8 @@ import { useCallback, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { TrackSort } from "../bindings";
 import { playFrom } from "../core/play";
-import { useAlbums, useArtists, useFolders, useRecentAlbums, useTrackPages } from "../core/queries";
+import { useAlbums, useArtists, useFolders, usePlaylists, useRecentAlbums, useTrackPages } from "../core/queries";
+import { GenArt } from "../library/GenArt";
 import { addFolderFromDialog } from "../library/add-folder";
 import { AlbumGrid } from "../library/AlbumGrid";
 import { TrackList } from "../tracks/TrackList";
@@ -74,6 +75,38 @@ function Songs() {
   );
 }
 
+/** Colour tiles for your playlists, with Me gusta first. */
+function PlaylistTiles() {
+  const playlists = usePlaylists().data ?? [];
+  if (playlists.length === 0) return null;
+  const tiles = [
+    { to: "/collection/tracks", name: "Me gusta", sub: "Colección" },
+    ...playlists.map((p) => ({ to: `/playlist/${p.id}`, name: p.name, sub: `${p.trackCount} canciones` })),
+  ];
+  return (
+    <section className={styles.section} aria-labelledby="your-playlists">
+      <h2 id="your-playlists" className={styles.sectionTitle}>
+        Tus playlists
+      </h2>
+      <ul className={styles.tiles}>
+        {tiles.map((t) => (
+          <li key={t.to}>
+            <Link to={t.to} className={styles.tile}>
+              <span className={styles.tileArt}>
+                <GenArt seed={t.name} />
+              </span>
+              <span className={styles.tileText}>
+                <span className={styles.tileName}>{t.name}</span>
+                <span className={styles.tileSub}>{t.sub}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Artists() {
   const artists = useArtists().data ?? [];
   return (
@@ -81,8 +114,8 @@ function Artists() {
       {artists.map((a) => (
         <li key={a.id}>
           <Link to={`/artist/${a.id}`} className={styles.artistCard}>
-            <span className={styles.initials} aria-hidden="true">
-              {a.name.slice(0, 1).toUpperCase()}
+            <span className={styles.avatar}>
+              <GenArt seed={a.name} />
             </span>
             <span className={styles.artistName}>{a.name}</span>
           </Link>
@@ -132,6 +165,7 @@ export function Home() {
   return (
     <section className={styles.page}>
       <h1 className={styles.title}>Biblioteca</h1>
+      <PlaylistTiles />
       {recent.length > 0 && (
         <section className={styles.section} aria-labelledby="recent">
           <h2 id="recent" className={styles.sectionTitle}>

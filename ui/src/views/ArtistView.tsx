@@ -24,6 +24,8 @@ export function ArtistView() {
       <ViewHeader
         kind="ARTISTA"
         title={artist.name}
+        seed={artist.name}
+        cover={{ albumId: null, round: true }}
         meta={[countLabel(albums.length, "álbum", "álbumes"), countLabel(tracks.length, "canción", "canciones")]}
         actions={<PlayButton name={artist.name} onClick={() => playFrom(context, 0)} />}
       />

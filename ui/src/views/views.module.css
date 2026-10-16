@@ -33,6 +33,8 @@
 }
 
 .header {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: flex-end;
   gap: var(--space-xl);
@@ -40,11 +42,30 @@
   min-width: 0;
 }
 
+/* The colour band: the item's two hues bloom behind its header, edge to edge, and fade out. */
+.header::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(-1 * var(--space-xl)) calc(-1 * var(--space-xl)) calc(-1 * var(--space-2xl));
+  background:
+    radial-gradient(70% 90% at 10% 0%, oklch(var(--gen-l-b) var(--gen-c-b) var(--hue-a) / var(--gen-band)), transparent 70%),
+    radial-gradient(60% 80% at 75% 10%, oklch(var(--gen-l-b) var(--gen-c-b) var(--hue-b) / var(--gen-band)), transparent 70%);
+  mask-image: linear-gradient(to bottom, black 55%, transparent);
+  pointer-events: none;
+}
+
 .headerCover {
   flex: none;
   width: clamp(160px, 18vw, 232px);
-  box-shadow: 0 24px 60px -28px var(--color-shadow);
+  box-shadow: 0 24px 60px -24px var(--color-shadow);
   border-radius: var(--radius-sm);
+}
+
+.headerCover[data-round],
+.headerCover[data-round] > * {
+  border-radius: var(--radius-pill);
+  overflow: hidden;
 }
 
 .headerText {
@@ -231,6 +252,74 @@
   background: var(--color-paper-3);
   font: var(--text-xl) / 1 var(--font-display);
   color: var(--color-ink-2);
+}
+
+.avatar {
+  display: block;
+  width: 100%;
+  max-width: 120px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.topCard .avatar {
+  width: 96px;
+}
+
+.tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: var(--space-sm);
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-right: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-paper-2);
+  overflow: hidden;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.tile:hover {
+  background: var(--color-paper-3);
+  text-decoration: none;
+}
+
+.tileArt {
+  flex: none;
+  width: 64px;
+}
+
+.tileArt > * {
+  border-radius: 0;
+}
+
+.tileText {
+  display: grid;
+  min-width: 0;
+}
+
+.tileName,
+.tileSub {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tileName {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.tileSub {
+  color: var(--color-ink-3);
+  font: var(--text-xs) / 1.4 var(--font-mono);
 }
 
 .artistName {

@@ -26,7 +26,8 @@
   container-type: inline-size;
   /* The one atmospheric bloom: fixed to the view, it does not scroll with the content. */
   background:
-    radial-gradient(70% 55% at 15% 0%, var(--color-bloom), transparent 70%) no-repeat,
+    radial-gradient(60% 50% at 8% 0%, var(--color-bloom), transparent 70%) no-repeat,
+    radial-gradient(50% 45% at 95% 4%, var(--color-bloom-2), transparent 70%) no-repeat,
     var(--color-paper);
 }
 
