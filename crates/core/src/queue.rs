@@ -14,6 +14,7 @@ pub const RESTART_THRESHOLD_MS: u64 = 3_000;
 const HISTORY_LIMIT: usize = 100;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "lowercase")]
 pub enum RepeatMode {
     #[default]

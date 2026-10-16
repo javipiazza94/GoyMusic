@@ -10,6 +10,7 @@ use crate::TrackId;
 
 /// Audio engine state: `Idle → Loading → Playing ⇄ Paused → Ended`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub enum PlaybackState {
     #[default]
@@ -21,6 +22,7 @@ pub enum PlaybackState {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum Event {
     LibraryUpdated,

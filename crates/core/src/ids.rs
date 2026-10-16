@@ -4,6 +4,7 @@ macro_rules! id_types {
     ($($name:ident),* $(,)?) => {
         $(
             #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+            #[cfg_attr(feature = "specta", derive(specta::Type))]
             #[serde(transparent)]
             pub struct $name(pub i64);
         )*
