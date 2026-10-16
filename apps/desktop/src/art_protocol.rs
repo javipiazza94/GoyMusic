@@ -56,6 +56,14 @@ impl ArtPool {
     }
 }
 
+/// The core is not up yet (requests can arrive before setup finishes).
+pub fn unavailable() -> Response<Vec<u8>> {
+    Response::builder()
+        .status(StatusCode::SERVICE_UNAVAILABLE)
+        .body(Vec::new())
+        .expect("static response")
+}
+
 pub fn respond(pool: &ArtPool, services: Arc<Services>, path: String, responder: UriSchemeResponder) {
     pool.run(move || {
         let response = match parse(&path).map(|(id, size)| services.album_art(id, size)) {

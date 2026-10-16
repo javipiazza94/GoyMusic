@@ -32,9 +32,10 @@ specta = { version = "=2.0.0-rc.25", features = ["derive"] }
 specta-typescript = "=0.0.12"
 strsim = "0.11"
 symphonia = { version = "=0.5.5", default-features = false, features = ["mp3", "flac", "ogg", "vorbis", "wav", "pcm", "aac", "isomp4", "alac"] }
-tauri = "=2.12.1"
+tauri = { version = "=2.12.1", features = ["tray-icon", "image-png"] }
 tauri-build = "=2.7.1"
 tauri-plugin-dialog = "=2.8.1"
+tauri-plugin-single-instance = "=2.5.2"
 tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 tempfile = "3"
 thiserror = "2"
