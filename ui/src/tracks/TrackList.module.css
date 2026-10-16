@@ -1,0 +1,133 @@
+.scroller {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.grid {
+  --cols: 3rem minmax(0, 1fr) 2.5rem 4.5rem;
+  min-width: 0;
+}
+
+.grid[data-album] {
+  --cols: 3rem minmax(0, 1.3fr) minmax(0, 1fr) 2.5rem 4.5rem;
+}
+
+.body {
+  position: relative;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  gap: var(--space-md);
+  height: var(--row-h);
+  padding: 0 var(--space-sm);
+  border-radius: var(--radius-md);
+  color: var(--color-ink-2);
+  user-select: none;
+}
+
+.body .row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.header {
+  height: 36px;
+  font: var(--text-xs) / 1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  border-bottom: 1px solid var(--color-rule);
+  border-radius: 0;
+  margin-bottom: var(--space-xs);
+}
+
+.body .row:hover {
+  background: var(--color-paper-2);
+}
+
+.body .row[aria-selected="true"] {
+  background: var(--color-paper-3);
+}
+
+.body .row:focus-visible {
+  outline-offset: -2px;
+}
+
+.body .row[aria-current="true"] .title,
+.body .row[aria-current="true"] .number {
+  color: var(--color-accent);
+}
+
+.number,
+.duration {
+  font: var(--text-sm) / 1 var(--font-mono);
+  color: var(--color-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.number {
+  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.duration {
+  text-align: right;
+}
+
+.main {
+  display: grid;
+  min-width: 0;
+}
+
+.title,
+.artists,
+.album {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.title {
+  color: var(--color-ink);
+}
+
+.artists {
+  font-size: var(--text-sm);
+}
+
+.like {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink-3);
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.row:hover .like,
+.row:focus-within .like,
+.like[data-liked] {
+  opacity: 1;
+}
+
+.like:hover {
+  color: var(--color-ink);
+}
+
+.like[data-liked] {
+  color: var(--color-accent-2);
+}

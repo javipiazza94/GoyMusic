@@ -15,6 +15,9 @@ class NoopResizeObserver {
 }
 globalThis.ResizeObserver ??= NoopResizeObserver as unknown as typeof ResizeObserver;
 installMatchMedia();
+// jsdom has no layout; virtualized lists measure their scroll element with these.
+Object.defineProperty(HTMLElement.prototype, "offsetHeight", { configurable: true, get: () => 768 });
+Object.defineProperty(HTMLElement.prototype, "offsetWidth", { configurable: true, get: () => 1024 });
 
 const initialPlayer = usePlayer.getState();
 
