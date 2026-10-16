@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { commands, type TrackSort } from "../bindings";
 import { unwrap } from "./result";
 
@@ -84,4 +84,16 @@ export function usePlaylist(id: number) {
 
 export function useLikedTracks() {
   return useQuery({ queryKey: [...keys.likes, "tracks"], queryFn: async () => unwrap(await commands.likedTracks()) });
+}
+
+export const SEARCH_LIMIT = 20;
+
+/** Results while typing: keeps the previous answer on screen until the new one arrives. */
+export function useSearch(q: string) {
+  return useQuery({
+    queryKey: keys.search(q),
+    queryFn: async () => unwrap(await commands.search(q, SEARCH_LIMIT)),
+    enabled: q.trim().length > 0,
+    placeholderData: keepPreviousData,
+  });
 }

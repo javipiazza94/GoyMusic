@@ -1,5 +1,6 @@
 import { ContextMenu } from "../menu/ContextMenu";
 import { PlayerBar } from "../player/PlayerBar";
+import { QueuePanel } from "../queue/QueuePanel";
 import { useState } from "react";
 import { AppRoutes } from "./routes";
 import { ScrollParent } from "./scroll-parent";
@@ -19,11 +20,7 @@ export function AppShell() {
           <AppRoutes />
         </ScrollParent.Provider>
       </main>
-      {queueOpen && (
-        <aside className={styles.queue} aria-label="Cola">
-          <h2 className={styles.queueTitle}>Cola</h2>
-        </aside>
-      )}
+      {queueOpen && <QueuePanel />}
       <footer className={styles.player}>
         <PlayerBar />
       </footer>

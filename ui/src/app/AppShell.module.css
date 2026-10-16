@@ -26,17 +26,6 @@
     var(--color-paper);
 }
 
-.queue {
-  grid-area: queue;
-  overflow-y: auto;
-  background: var(--color-paper-2);
-  padding: var(--space-lg) var(--space-md);
-}
-
-.queueTitle {
-  font: 600 var(--text-md) / 1.2 var(--font-body);
-}
-
 .player {
   grid-area: player;
   background: var(--color-paper-2);
