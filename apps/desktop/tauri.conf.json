@@ -17,6 +17,18 @@
         "height": 800,
         "minWidth": 900,
         "minHeight": 600,
+        "dragDropEnabled": false,
+        "label": "main"
+      },
+      {
+        "label": "mini",
+        "title": "GoyMusic · mini",
+        "url": "index.html?ventana=mini",
+        "width": 380,
+        "height": 128,
+        "resizable": false,
+        "decorations": false,
+        "visible": false,
         "dragDropEnabled": false
       }
     ],

@@ -300,3 +300,29 @@ pub async fn player_view(s: Svc<'_>) -> Res<PlayerView> {
 pub async fn settings(s: Svc<'_>) -> Res<Settings> {
     s.settings()
 }
+
+// ---- windows ----
+
+#[tauri::command]
+#[specta::specta]
+pub async fn show_mini_player(app: tauri::AppHandle) {
+    crate::window::show_mini(&app);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn hide_mini_player(app: tauri::AppHandle) {
+    crate::window::hide_mini(&app);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn set_mini_on_top(app: tauri::AppHandle, on: bool) {
+    crate::window::set_mini_on_top(&app, on);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn show_main_window(app: tauri::AppHandle) {
+    crate::window::show_main(&app);
+}

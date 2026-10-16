@@ -43,3 +43,16 @@ pub fn on_close(tray_available: bool) -> CloseAction {
         CloseAction::Quit
     }
 }
+
+pub fn hide_mini(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("mini") {
+        let _ = window.hide();
+    }
+}
+
+/// Keeps the mini player above other windows (or not).
+pub fn set_mini_on_top(app: &AppHandle, on: bool) {
+    if let Some(window) = app.get_webview_window("mini") {
+        let _ = window.set_always_on_top(on);
+    }
+}

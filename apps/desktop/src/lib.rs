@@ -74,6 +74,10 @@ pub fn specta_builder() -> Builder<tauri::Wry> {
             queue_move,
             player_view,
             settings,
+            show_mini_player,
+            hide_mini_player,
+            set_mini_on_top,
+            show_main_window,
         ])
         .events(collect_events![CoreEvent])
         // ids are SQLite rowids and times are milliseconds: always far below 2^53
@@ -120,6 +124,11 @@ pub fn run() {
             }
         })
         .on_window_event(|window, event| {
+            if let (WindowEvent::CloseRequested { api, .. }, "mini") = (event, window.label()) {
+                // the mini player is created once at startup; closing it only hides it
+                api.prevent_close();
+                let _ = window.hide();
+            }
             if let (WindowEvent::CloseRequested { api, .. }, "main") = (event, window.label()) {
                 let tray = window.app_handle().state::<TrayState>().0.load(Ordering::SeqCst);
                 match window::on_close(tray) {

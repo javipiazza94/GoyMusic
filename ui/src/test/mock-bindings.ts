@@ -19,7 +19,8 @@ const names: CommandName[] = [
   "deletePlaylist", "addToPlaylist", "removeFromPlaylist", "movePlaylistItem", "createPlaylistFolder",
   "movePlaylistToFolder", "like", "unlike", "likedTracks", "likedIds", "importM3u", "exportM3u", "play", "pause",
   "resume", "next", "previous", "seek", "setShuffle", "setRepeat", "setVolume", "setReplaygain", "queueAdd",
-  "queueRemove", "queueMove", "playerView", "settings",
+  "queueRemove", "queueMove", "playerView", "settings", "showMiniPlayer", "hideMiniPlayer", "setMiniOnTop",
+  "showMainWindow",
 ];
 
 export const commands = Object.fromEntries(names.map((n) => [n, vi.fn()])) as unknown as Record<CommandName, Mock>;
