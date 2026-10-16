@@ -1,3 +1,18 @@
 [
-  { "date": "2026-10-16", "macrostructure": "app shell (§7)", "theme": "Lumen", "enrichment": "none", "brief": "GoyMusic · reproductor de música local" }
+  {
+    "date": "2026-10-17",
+    "macrostructure": "app shell (§7)",
+    "theme": "custom",
+    "theme_axes": "dark / classical-serif / warm",
+    "vibe": "late-night plum, neon magenta, sunset coral",
+    "enrichment": "generated colour art (hue.ts)",
+    "brief": "GoyMusic · rediseño «Color vivo» (Javi: no todo a negro)"
+  },
+  {
+    "date": "2026-10-16",
+    "macrostructure": "app shell (§7)",
+    "theme": "Lumen",
+    "enrichment": "none",
+    "brief": "GoyMusic · reproductor de música local"
+  }
 ]

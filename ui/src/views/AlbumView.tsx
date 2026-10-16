@@ -25,6 +25,7 @@ export function AlbumView() {
         kind="ÁLBUM"
         title={album.title}
         meta={meta.filter((m): m is string => Boolean(m))}
+        seed={album.title}
         cover={{ albumId: album.id }}
         actions={<PlayButton name={album.title} onClick={() => playFrom(context, 0)} />}
       />

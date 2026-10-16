@@ -1,20 +1,26 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Cover } from "../library/Cover";
+import { hueStyle } from "../library/hue";
 import styles from "./views.module.css";
 
-/** Head of a collection view: cover, mono kind label, display title, meta line and actions. */
+/**
+ * Head of a collection view: cover, mono kind label, display title, meta line and actions,
+ * over a colour band made from the item's own hues (`seed`, usually its name).
+ */
 export function ViewHeader(p: {
   kind: string;
   title: ReactNode;
   meta: string[];
-  cover?: { albumId: number | null };
+  seed?: string;
+  cover?: { albumId: number | null; round?: boolean };
   actions?: ReactNode;
 }) {
+  const seed = p.seed ?? (typeof p.title === "string" ? p.title : p.kind);
   return (
-    <header className={styles.header}>
+    <header className={styles.header} style={hueStyle(seed) as CSSProperties}>
       {p.cover && (
-        <div className={styles.headerCover}>
-          <Cover albumId={p.cover.albumId} size={600} />
+        <div className={styles.headerCover} data-round={p.cover.round || undefined}>
+          <Cover albumId={p.cover.albumId} size={600} seed={seed} label={p.cover.albumId === null ? seed : ""} />
         </div>
       )}
       <div className={styles.headerText}>

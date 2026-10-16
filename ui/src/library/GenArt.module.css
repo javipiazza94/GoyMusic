@@ -1,0 +1,29 @@
+.art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  container-type: inline-size;
+  background:
+    radial-gradient(90% 80% at 18% 12%, oklch(var(--gen-l-a) var(--gen-c-a) var(--hue-a)), transparent 65%),
+    linear-gradient(140deg, oklch(var(--gen-l-a) var(--gen-c-a) var(--hue-a)), oklch(var(--gen-l-b) var(--gen-c-b) var(--hue-b)));
+}
+
+/* the filament ring of the app icon, as a quiet motif */
+.art::after {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: var(--radius-pill);
+  border: max(1px, 1.6cqi) solid var(--gen-ring);
+}
+
+.initial {
+  position: relative;
+  z-index: 1;
+  font: 46cqi / 1 var(--font-display);
+  color: var(--gen-ink);
+}

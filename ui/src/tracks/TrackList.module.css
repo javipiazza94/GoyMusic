@@ -12,6 +12,19 @@
   --cols: 3rem minmax(0, 1.3fr) minmax(0, 1fr) 2.5rem 4.5rem;
 }
 
+.grid[data-art] {
+  --cols: 3rem 40px minmax(0, 1fr) 2.5rem 4.5rem;
+}
+
+.grid[data-album][data-art] {
+  --cols: 3rem 40px minmax(0, 1.3fr) minmax(0, 1fr) 2.5rem 4.5rem;
+}
+
+.art {
+  width: 40px;
+  display: block;
+}
+
 .body {
   position: relative;
 }

@@ -41,7 +41,7 @@ function NowPlaying({ track }: { track: Track | null }) {
   return (
     <div className={styles.now}>
       <div className={styles.thumb}>
-        <Cover albumId={track.albumId} size={200} />
+        <Cover albumId={track.albumId} size={200} seed={track.album ?? track.title} />
       </div>
       <div className={styles.meta}>
         {track.albumId !== null ? (

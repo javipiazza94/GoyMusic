@@ -6,6 +6,7 @@ import { useLikedIds } from "../core/likes";
 import { usePlayer } from "../core/player-store";
 import { usePlaylistFolders, usePlaylists } from "../core/queries";
 import { dropTarget } from "../dnd/drag";
+import { GenArt } from "../library/GenArt";
 import { unwrap } from "../core/result";
 import { reportError, runCommand } from "../core/report";
 import styles from "./Sidebar.module.css";
@@ -32,7 +33,10 @@ function PlaylistLink({ playlist }: { playlist: Playlist }) {
         className={styles.playlist}
         {...dropTarget(({ ids }) => runCommand(commands.addToPlaylist(playlist.id, ids)))}
       >
-        {playlist.name}
+        <span className={styles.thumb}>
+          <GenArt seed={playlist.name} />
+        </span>
+        <span className={styles.playlistName}>{playlist.name}</span>
       </NavLink>
     </li>
   );

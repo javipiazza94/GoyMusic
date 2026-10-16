@@ -11,6 +11,7 @@ import { formatMs, usePlaylists } from "../core/queries";
 import { carriesTracks, readDrag, writeDrag, type DragPayload } from "../dnd/drag";
 import { useMenu, type MenuItem } from "../menu/menu-store";
 import { trackMenu } from "./track-menu";
+import { Cover } from "../library/Cover";
 import { nextSelection, type Selection } from "./selection";
 import styles from "./TrackList.module.css";
 import { reportError } from "../core/report";
@@ -23,6 +24,8 @@ export interface TrackListProps {
   /** `trackNo` shows the tag's track number (album views); `index` the row number. */
   numbering?: "index" | "trackNo";
   showAlbum?: boolean;
+  /** Small cover (or generated art) per row; off in album views, where every row shares it. */
+  showArt?: boolean;
   /** Double click or Enter on a row. */
   onPlay(index: number): void;
   /** Called when the last rows come into view, to load more. */
@@ -61,6 +64,7 @@ function Artists({ names }: { names: string[] }) {
 
 export function TrackList(props: TrackListProps) {
   const { rows, numbering = "index", showAlbum = true, onPlay, onEndReached, menuExtra, onReorder, label } = props;
+  const showArt = props.showArt ?? showAlbum;
   const listId = useId();
   const navigate = useNavigate();
   const playlists = usePlaylists().data ?? [];
@@ -211,9 +215,11 @@ export function TrackList(props: TrackListProps) {
       aria-multiselectable="true"
       className={styles.grid}
       data-album={showAlbum || undefined}
+      data-art={showArt || undefined}
     >
       <div role="row" aria-rowindex={1} className={`${styles.row} ${styles.header}`}>
         <span role="columnheader" className={styles.number}>#</span>
+        {showArt && <span role="columnheader" aria-label="Carátula" />}
         <span role="columnheader">Título</span>
         {showAlbum && <span role="columnheader">Álbum</span>}
         <span role="columnheader" className="visually-hidden">Me gusta</span>
@@ -258,6 +264,11 @@ export function TrackList(props: TrackListProps) {
               <span role="gridcell" className={styles.number}>
                 {isCurrent ? <Icon name="volume" size={16} /> : number}
               </span>
+              {showArt && (
+                <span role="gridcell" className={styles.art}>
+                  <Cover albumId={track.albumId} size={200} seed={track.album ?? track.title} />
+                </span>
+              )}
               <span role="gridcell" className={styles.main}>
                 <span className={styles.title}>{track.title}</span>
                 {track.artists.length > 0 && <Artists names={track.artists} />}

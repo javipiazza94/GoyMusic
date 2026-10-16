@@ -41,9 +41,18 @@
 }
 
 .playlist {
-  display: block;
-  min-height: 32px;
-  line-height: 32px;
+  min-height: 36px;
+  gap: var(--space-xs);
+  padding-left: var(--space-xs);
+}
+
+.thumb {
+  flex: none;
+  width: 24px;
+}
+
+.playlistName {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }

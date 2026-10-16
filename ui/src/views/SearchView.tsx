@@ -5,6 +5,7 @@ import { playFrom } from "../core/play";
 import { useSearch } from "../core/queries";
 import { AlbumGrid } from "../library/AlbumGrid";
 import { Cover } from "../library/Cover";
+import { GenArt } from "../library/GenArt";
 import { TrackList } from "../tracks/TrackList";
 import styles from "./views.module.css";
 
@@ -15,8 +16,8 @@ function TopCard({ top }: { top: TopResult }) {
     case "artist":
       return (
         <Link to={`/artist/${top.item.id}`} className={styles.topCard}>
-          <span className={styles.initials} aria-hidden="true">
-            {top.item.name.slice(0, 1).toUpperCase()}
+          <span className={styles.avatar}>
+            <GenArt seed={top.item.name} />
           </span>
           <span className={styles.topName}>{top.item.name}</span>
           <span className={styles.kind}>ARTISTA</span>
@@ -26,7 +27,7 @@ function TopCard({ top }: { top: TopResult }) {
       return (
         <Link to={`/album/${top.item.id}`} className={styles.topCard}>
           <div className={styles.topCover}>
-            <Cover albumId={top.item.id} size={200} />
+            <Cover albumId={top.item.id} size={200} seed={top.item.title} />
           </div>
           <span className={styles.topName}>{top.item.title}</span>
           <span className={styles.kind}>ÁLBUM{top.item.artist ? ` · ${top.item.artist.toUpperCase()}` : ""}</span>
@@ -40,7 +41,7 @@ function TopCard({ top }: { top: TopResult }) {
           onClick={() => playFrom({ kind: "tracks", id: [top.item.id] }, 0)}
         >
           <div className={styles.topCover}>
-            <Cover albumId={top.item.albumId} size={200} />
+            <Cover albumId={top.item.albumId} size={200} seed={top.item.album ?? top.item.title} />
           </div>
           <span className={styles.topName}>{top.item.title}</span>
           <span className={styles.kind}>CANCIÓN · REPRODUCIR</span>

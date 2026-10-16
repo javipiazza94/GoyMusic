@@ -1,24 +1,38 @@
-/* Hallmark · genre: atmospheric · theme: Lumen (Night/Day) · nav: N3 side-rail · footer: player bar · enrichment: none */
-/* Night Foundry is the default; Day Foundry applies with <html data-theme="light">. */
+/* Hallmark · macrostructure: app shell (§7) · nav: N3 side-rail · footer: player bar
+ * theme: custom · vibe: "late-night plum, neon magenta, sunset coral" · paper: oklch(15% 0.035 300) · accent: oklch(74% 0.19 35)
+ * display: Instrument Serif · body: Geist · axes: dark / classical-serif / warm
+ * studied: no · context: explicit (Javi, 2026-10-17: "más chulo, no todo a negro") · system: design.md
+ */
+/* Dark ("Color vivo") is the default; the light counterpart applies with <html data-theme="light">. */
 
 :root {
   color-scheme: dark;
 
-  --color-paper: oklch(13% 0.014 265);
-  --color-paper-2: oklch(17% 0.016 265);
-  --color-paper-3: oklch(22% 0.018 265);
-  --color-ink: oklch(96% 0.006 262);
-  --color-ink-2: oklch(76% 0.012 262);
-  --color-ink-3: oklch(64% 0.012 262);
-  --color-rule: oklch(96% 0.006 262 / 0.08);
-  --color-accent: oklch(76% 0.17 50);
-  --color-accent-ink: oklch(18% 0.03 50);
-  --color-accent-2: oklch(68% 0.16 18);
-  --color-glow: oklch(80% 0.16 50 / 0.42);
-  --color-bloom: oklch(76% 0.17 50 / 0.08);
-  --color-selected: oklch(76% 0.17 50 / 0.16);
+  --color-paper: oklch(15% 0.035 300);
+  --color-paper-2: oklch(19% 0.04 300);
+  --color-paper-3: oklch(24% 0.045 300);
+  --color-ink: oklch(97% 0.01 320);
+  --color-ink-2: oklch(82% 0.03 320);
+  --color-ink-3: oklch(70% 0.035 320);
+  --color-rule: oklch(97% 0.01 320 / 0.1);
+  --color-accent: oklch(74% 0.19 35);
+  --color-accent-ink: oklch(18% 0.04 35);
+  --color-accent-2: oklch(70% 0.2 350);
+  --color-glow: oklch(74% 0.19 35 / 0.5);
+  --color-bloom: oklch(62% 0.2 345 / 0.3);
+  --color-bloom-2: oklch(72% 0.19 40 / 0.2);
+  --color-selected: oklch(70% 0.2 350 / 0.2);
   --color-focus: var(--color-accent);
-  --color-shadow: oklch(6% 0.02 265 / 0.6);
+  --color-shadow: oklch(8% 0.04 300 / 0.6);
+
+  /* generated colour (hue.ts): only the hue varies per item */
+  --gen-l-a: 72%;
+  --gen-c-a: 0.17;
+  --gen-l-b: 48%;
+  --gen-c-b: 0.2;
+  --gen-band: 0.55;
+  --gen-ink: oklch(98% 0.01 320);
+  --gen-ring: oklch(98% 0.01 320 / 0.28);
 
   --font-display: "Instrument Serif", Georgia, serif;
   --font-body: "Geist Variable", system-ui, sans-serif;
@@ -60,18 +74,25 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --color-paper: oklch(97% 0.008 265);
-  --color-paper-2: oklch(94% 0.01 265);
-  --color-paper-3: oklch(90% 0.012 265);
-  --color-ink: oklch(18% 0.014 265);
-  --color-ink-2: oklch(38% 0.014 265);
-  --color-ink-3: oklch(48% 0.014 265);
-  --color-rule: oklch(18% 0.014 265 / 0.1);
-  --color-accent: oklch(46% 0.24 268);
-  --color-accent-ink: oklch(98% 0.01 268);
-  --color-accent-2: oklch(52% 0.19 18);
+  --color-paper: oklch(97% 0.015 60);
+  --color-paper-2: oklch(94% 0.02 50);
+  --color-paper-3: oklch(90% 0.03 45);
+  --color-ink: oklch(20% 0.04 310);
+  --color-ink-2: oklch(38% 0.04 310);
+  --color-ink-3: oklch(46% 0.04 310);
+  --color-rule: oklch(20% 0.04 310 / 0.1);
+  --color-accent: oklch(56% 0.2 30);
+  --color-accent-ink: oklch(99% 0.01 30);
+  --color-accent-2: oklch(52% 0.2 350);
   --color-glow: transparent;
-  --color-bloom: oklch(46% 0.24 268 / 0.06);
-  --color-selected: oklch(46% 0.24 268 / 0.12);
-  --color-shadow: oklch(18% 0.014 265 / 0.18);
+  --color-bloom: oklch(70% 0.17 345 / 0.22);
+  --color-bloom-2: oklch(80% 0.14 50 / 0.3);
+  --color-selected: oklch(52% 0.2 350 / 0.12);
+  --color-shadow: oklch(20% 0.04 310 / 0.18);
+
+  --gen-l-a: 78%;
+  --gen-c-a: 0.15;
+  --gen-l-b: 56%;
+  --gen-c-b: 0.19;
+  --gen-band: 0.45;
 }

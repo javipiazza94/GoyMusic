@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { expect, test, vi } from "vitest";
 import { commands } from "../bindings";
@@ -58,4 +58,13 @@ test("home invites to add a folder when the library is empty", async () => {
   expect(await screen.findByText("Tu biblioteca está vacía")).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Añadir carpeta" }));
   expect(commands.addFolder).toHaveBeenCalledWith("/home/javi/Música");
+});
+
+test("home shows your playlists as colour tiles", async () => {
+  vi.mocked(commands.folders).mockResolvedValue(ok([folder]));
+  vi.mocked(commands.playlists).mockResolvedValue(ok([{ id: 3, name: "Carretera", folderId: null, trackCount: 7 }]));
+  renderAt("/");
+  const section = await screen.findByRole("region", { name: "Tus playlists" });
+  expect(within(section).getByRole("link", { name: /Carretera/ }).getAttribute("href")).toBe("/playlist/3");
+  expect(within(section).getByRole("link", { name: /Me gusta/ }).getAttribute("href")).toBe("/collection/tracks");
 });

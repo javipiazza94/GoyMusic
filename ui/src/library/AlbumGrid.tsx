@@ -12,7 +12,7 @@ export function AlbumGrid({ albums, row = false }: { albums: Album[]; row?: bool
         <li key={album.id} className={styles.card}>
           <div className={styles.art}>
             <Link to={`/album/${album.id}`} tabIndex={-1} aria-hidden="true">
-              <Cover albumId={album.id} size={200} />
+              <Cover albumId={album.id} size={200} seed={album.title} />
             </Link>
             <button
               type="button"

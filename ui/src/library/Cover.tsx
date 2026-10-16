@@ -1,17 +1,24 @@
 import { useState } from "react";
-import { Icon } from "../components/Icon";
 import { artUrl } from "../core/queries";
+import { GenArt } from "./GenArt";
 import styles from "./Cover.module.css";
 
-/** Album cover, or a quiet placeholder when there is no album or no art. */
-export function Cover({ albumId, size, label = "" }: { albumId: number | null; size: 200 | 600; label?: string }) {
+/** Album cover, or generated art in the item's own colours when there is no album or no art. */
+export function Cover({
+  albumId,
+  size,
+  label = "",
+  seed,
+}: {
+  albumId: number | null;
+  size: 200 | 600;
+  label?: string;
+  /** Name the generated art is made from (album, track or playlist title). */
+  seed?: string;
+}) {
   const [failed, setFailed] = useState<number | null>(null);
   if (albumId === null || failed === albumId) {
-    return (
-      <div className={styles.placeholder} role={label ? "img" : undefined} aria-label={label || undefined}>
-        <Icon name="music" size={size === 600 ? 64 : 24} />
-      </div>
-    );
+    return <GenArt seed={seed ?? (label || String(albumId ?? ""))} label={label} />;
   }
   return (
     <img
