@@ -8,13 +8,16 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
+async-channel = "=2.5.0"
 cpal = "=0.15.3"
 deunicode = "1"
 dirs = "=7.0.0"
 flacenc = "=0.5.1"
+futures-lite = "=2.6.1"
 hound = "3"
 image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
 lofty = "0.21"
+mpris-server = "=0.10.0"
 notify = "=8.2.0"
 rand = "0.8"
 rayon = "1"

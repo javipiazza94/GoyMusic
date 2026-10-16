@@ -12,11 +12,14 @@ name = "goymusic"
 path = "src/main.rs"
 
 [dependencies]
+async-channel.workspace = true
 dirs.workspace = true
+futures-lite.workspace = true
 goymusic-audio = { path = "../../crates/audio" }
 goymusic-core = { path = "../../crates/core", features = ["specta"] }
 goymusic-library = { path = "../../crates/library", features = ["specta"] }
 goymusic-services = { path = "../../crates/services", features = ["specta"] }
+mpris-server.workspace = true
 serde.workspace = true
 specta.workspace = true
 specta-typescript.workspace = true

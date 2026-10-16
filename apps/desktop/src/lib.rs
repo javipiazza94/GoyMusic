@@ -3,8 +3,11 @@
 
 pub mod art_protocol;
 mod commands;
+pub mod control;
 mod forward;
 mod logging;
+pub mod mpris;
+mod window;
 
 use std::path::Path;
 use std::sync::Arc;
@@ -108,6 +111,15 @@ pub fn run() {
         .setup(move |app| {
             builder.mount_events(app);
             forward::start(app.handle().clone(), forward_services.events());
+            let (raise_app, quit_app) = (app.handle().clone(), app.handle().clone());
+            mpris::spawn(
+                forward_services.clone(),
+                forward_services.events().subscribe(),
+                mpris::MprisHooks {
+                    raise: Box::new(move || window::show_main(&raise_app)),
+                    quit: Box::new(move || quit_app.exit(0)),
+                },
+            );
             Ok(())
         })
         .build(tauri::generate_context!())
