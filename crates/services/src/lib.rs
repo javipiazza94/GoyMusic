@@ -9,6 +9,7 @@ mod library;
 mod player;
 mod playlists;
 mod scan;
+mod watch;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -25,10 +26,12 @@ pub use error::{ErrorCode, Result, ServiceError};
 pub use library::{AlbumDetail, ArtistDetail};
 pub use player::{PlayContext, PlayerView, Settings, UP_NEXT_LIMIT};
 pub use playlists::PlaylistDetail;
+pub use watch::WatchStatus;
 
 use coordinator::Coordinator;
 use goymusic_library::state;
 use scan::ScanWorker;
+use watch::FolderWatcher;
 
 pub struct Services {
     config: ServicesConfig,
@@ -40,6 +43,7 @@ pub struct Services {
     scans: Arc<ScanWorker>,
     player: Arc<Mutex<Option<Player>>>,
     coordinator: Coordinator,
+    watcher: FolderWatcher,
     stopped: AtomicBool,
 }
 
@@ -58,7 +62,9 @@ impl Services {
         }
         let player = Arc::new(Mutex::new(Some(player)));
         let coordinator = Coordinator::start(Db::open(&config.db_path)?, coordinator_events, player.clone());
-        let has_folders = !folders::list(&db)?.is_empty();
+        let folder_paths: Vec<String> = folders::list(&db)?.into_iter().map(|f| f.path).collect();
+        let has_folders = !folder_paths.is_empty();
+        let watcher = FolderWatcher::start(&folder_paths, config.debounce, config.poll_every, scans.trigger());
         let services = Services {
             art_db: Mutex::new(Db::open(&config.db_path)?),
             db: Mutex::new(db),
@@ -67,6 +73,7 @@ impl Services {
             scans,
             player,
             coordinator,
+            watcher,
             stopped: AtomicBool::new(false),
         };
         if has_folders {
@@ -96,8 +103,13 @@ impl Services {
             }
         }
         self.coordinator.stop();
+        self.watcher.stop();
         self.scans.stop();
         self.player.lock().expect("player poisoned").take();
+    }
+
+    pub fn watch_status(&self) -> WatchStatus {
+        self.watcher.status()
     }
 
     fn db(&self) -> MutexGuard<'_, Db> {

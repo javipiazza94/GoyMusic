@@ -9,6 +9,7 @@ dirs.workspace = true
 goymusic-audio = { path = "../audio" }
 goymusic-core = { path = "../core" }
 goymusic-library = { path = "../library" }
+notify.workspace = true
 serde.workspace = true
 specta = { workspace = true, optional = true }
 thiserror.workspace = true

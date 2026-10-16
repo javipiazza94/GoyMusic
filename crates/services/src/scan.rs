@@ -68,6 +68,16 @@ impl ScanWorker {
         }
     }
 
+    /// Request function for other threads (watcher, polling); it outlives no one.
+    pub(crate) fn trigger(self: &Arc<Self>) -> Arc<dyn Fn() + Send + Sync> {
+        let worker = Arc::downgrade(self);
+        Arc::new(move || {
+            if let Some(worker) = worker.upgrade() {
+                worker.request();
+            }
+        })
+    }
+
     pub(crate) fn wait_idle(&self, timeout: Duration) -> bool {
         let deadline = Instant::now() + timeout;
         let mut s = self.status.0.lock().expect("scan status poisoned");

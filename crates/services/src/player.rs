@@ -14,6 +14,7 @@ use goymusic_library::{playlists, queries, state};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{ErrorCode, Result, ServiceError};
+use crate::watch::WatchStatus;
 use crate::Services;
 
 /// Context-track limit of [`PlayerView::up_next`].
@@ -55,6 +56,7 @@ pub struct PlayerView {
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub replaygain: bool,
+    pub watch: WatchStatus,
 }
 
 /// Track id → file, answered from the audio thread's own connection so a long scan or UI
@@ -197,6 +199,7 @@ impl Services {
     pub fn settings(&self) -> Result<Settings> {
         Ok(Settings {
             replaygain: saved_replaygain(&self.db())?,
+            watch: self.watch_status(),
         })
     }
 }

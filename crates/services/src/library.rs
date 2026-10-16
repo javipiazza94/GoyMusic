@@ -37,12 +37,20 @@ impl Services {
     /// Adds a library folder and scans it in the background.
     pub fn add_folder(&self, path: &Path) -> Result<Folder> {
         let folder = folders::add(&self.db(), path)?;
+        self.watcher.watch(Path::new(&folder.path));
         self.scans.request();
         Ok(folder)
     }
 
     pub fn remove_folder(&self, id: FolderId) -> Result<()> {
+        let path = folders::list(&self.db())?
+            .into_iter()
+            .find(|f| f.id == id)
+            .map(|f| f.path);
         folders::remove(&mut self.db(), id)?;
+        if let Some(path) = path {
+            self.watcher.unwatch(Path::new(&path));
+        }
         self.events.publish(Event::LibraryUpdated);
         Ok(())
     }
