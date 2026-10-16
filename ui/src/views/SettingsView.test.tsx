@@ -9,6 +9,9 @@ test("settings removes a folder and switches theme", async () => {
   vi.mocked(commands.folders).mockResolvedValue(ok([{ id: 1, path: "/home/javi/Música" }]));
   const { user } = renderAt("/settings");
   await user.click(await screen.findByRole("button", { name: "Quitar /home/javi/Música" }));
+  // removing a folder drops its songs from the library: it asks first
+  expect(commands.removeFolder).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Quitar carpeta" }));
   expect(commands.removeFolder).toHaveBeenCalledWith(1);
   await user.click(screen.getByRole("radio", { name: "Claro" }));
   expect(document.documentElement.dataset.theme).toBe("light");

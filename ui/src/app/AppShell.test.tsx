@@ -22,3 +22,14 @@ test("the queue column toggles and is remembered", () => {
   expect(screen.getByRole("complementary", { name: "Cola" })).toBeTruthy();
   expect(localStorage.getItem("goymusic.queueOpen")).toBe("true");
 });
+
+test("a skip link jumps to the main content", async () => {
+  const { user } = renderAt("/");
+  await user.click(screen.getByRole("button", { name: "Saltar al contenido" }));
+  expect(document.activeElement).toBe(screen.getByRole("main"));
+});
+
+test("the brand name is not machine-translated", () => {
+  renderAt("/");
+  expect(screen.getByText("GoyMusic").getAttribute("translate")).toBe("no");
+});

@@ -17,6 +17,8 @@ export function Cover({ albumId, size, label = "" }: { albumId: number | null; s
     <img
       className={styles.cover}
       src={artUrl(albumId, size)}
+      width={size}
+      height={size}
       alt={label}
       loading="lazy"
       decoding="async"

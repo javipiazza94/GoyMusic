@@ -81,7 +81,9 @@ export function Sidebar() {
 
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.brand}>GoyMusic</div>
+      <div className={styles.brand} translate="no">
+        GoyMusic
+      </div>
       <nav aria-label="Principal" className={styles.nav}>
         <NavItem to="/" icon="home" label="Inicio" />
         <NavItem to="/search" icon="search" label="Buscar" />

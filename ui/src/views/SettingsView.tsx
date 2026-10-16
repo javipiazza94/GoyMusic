@@ -1,10 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { commands } from "../bindings";
 import { usePlayer } from "../core/player-store";
 import { keys, useFolders, useSettings } from "../core/queries";
 import { unwrap } from "../core/result";
 import { useTheme, type ThemePref } from "../core/theme";
 import { addFolderFromDialog } from "../library/add-folder";
+import { ConfirmInline } from "./ConfirmInline";
 import styles from "./views.module.css";
 import { reportError } from "../core/report";
 
@@ -22,6 +24,7 @@ export function SettingsView() {
   const scan = usePlayer((s) => s.scan);
   const { pref, setPref } = useTheme();
   const qc = useQueryClient();
+  const [removing, setRemoving] = useState<{ id: number; path: string } | null>(null);
 
   async function setReplaygain(on: boolean) {
     unwrap(await commands.setReplaygain(on));
@@ -45,13 +48,24 @@ export function SettingsView() {
                 type="button"
                 className={styles.textButton}
                 aria-label={`Quitar ${f.path}`}
-                onClick={() => void commands.removeFolder(f.id).then(unwrap).catch(fail)}
+                onClick={() => setRemoving(f)}
               >
                 Quitar
               </button>
             </li>
           ))}
         </ul>
+        {removing && (
+          <ConfirmInline
+            message={`¿Quitar ${removing.path}? Sus canciones saldrán de la biblioteca, de tus playlists y de Me gusta; los archivos no se borran.`}
+            confirmLabel="Quitar carpeta"
+            onConfirm={() => {
+              setRemoving(null);
+              void commands.removeFolder(removing.id).then(unwrap).catch(fail);
+            }}
+            onCancel={() => setRemoving(null)}
+          />
+        )}
         <div className={styles.actions}>
           <button type="button" className={styles.secondaryButton} onClick={() => void addFolderFromDialog().catch(fail)}>
             Añadir carpeta

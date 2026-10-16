@@ -134,7 +134,14 @@ export function TrackList(props: TrackListProps) {
   }
 
   function onKeyDown(e: KeyboardEvent, index: number) {
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    if (e.altKey && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      // keyboard alternative to dragging a row to a new place
+      e.preventDefault();
+      const to = index + (e.key === "ArrowDown" ? 1 : -1);
+      if (!onReorder || to < 0 || to >= rows.length) return;
+      onReorder(index, to);
+      moveFocus(to);
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       const next = index + (e.key === "ArrowDown" ? 1 : -1);
       moveFocus(next);

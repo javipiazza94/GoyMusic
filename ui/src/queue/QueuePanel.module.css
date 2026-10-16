@@ -1,6 +1,7 @@
 .panel {
   grid-area: queue;
   overflow-y: auto;
+  overscroll-behavior: contain;
   min-height: 0;
   background: var(--color-paper-2);
   padding: var(--space-lg) var(--space-sm);
@@ -43,6 +44,10 @@
   min-height: 52px;
   padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--radius-md);
+}
+
+.list .row:focus-visible {
+  outline-offset: -2px;
 }
 
 .list .row:hover {

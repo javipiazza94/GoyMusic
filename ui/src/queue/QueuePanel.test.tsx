@@ -52,3 +52,11 @@ test("an empty queue explains how to fill it", () => {
   renderAt("/", <QueuePanel />);
   expect(screen.getByText(/Arrastra canciones aquí/)).toBeTruthy();
 });
+
+test("alt+arrows reorder the user queue from the keyboard", async () => {
+  const { user } = renderQueue();
+  const item = screen.getByText("Levels").closest("li") as HTMLElement;
+  item.focus();
+  await user.keyboard("{Alt>}{ArrowDown}{/Alt}");
+  expect(commands.queueMove).toHaveBeenCalledWith(0, 1);
+});

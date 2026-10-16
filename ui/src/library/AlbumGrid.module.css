@@ -16,6 +16,9 @@
 }
 
 .card {
+  /* long grids: off-screen cards skip layout and paint */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 240px;
   display: grid;
   gap: var(--space-2xs);
   min-width: 0;

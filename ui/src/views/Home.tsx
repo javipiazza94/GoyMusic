@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import type { TrackSort } from "../bindings";
 import { playFrom } from "../core/play";
 import { useAlbums, useArtists, useFolders, useRecentAlbums, useTrackPages } from "../core/queries";
@@ -11,11 +11,12 @@ import { reportError } from "../core/report";
 
 type Tab = "songs" | "albums" | "artists";
 const TAB_KEY = "goymusic.homeTab";
-const tabs: Array<{ id: Tab; label: string }> = [
-  { id: "songs", label: "Canciones" },
-  { id: "albums", label: "Álbumes" },
-  { id: "artists", label: "Artistas" },
+const tabs: Array<{ id: Tab; label: string; param: string }> = [
+  { id: "songs", label: "Canciones", param: "canciones" },
+  { id: "albums", label: "Álbumes", param: "albumes" },
+  { id: "artists", label: "Artistas", param: "artistas" },
 ];
+const isSort = (v: string | null): v is TrackSort => v === "title" || v === "artist" || v === "album" || v === "recentlyAdded";
 const sorts: Array<{ id: TrackSort; label: string }> = [
   { id: "title", label: "Título" },
   { id: "artist", label: "Artista" },
@@ -32,8 +33,16 @@ function storedTab(): Tab | null {
   }
 }
 
+/** The order lives in the URL (`?orden=`), so going back returns to it. */
 function Songs() {
-  const [sort, setSort] = useState<TrackSort>("title");
+  const [params, setParams] = useSearchParams();
+  const raw = params.get("orden");
+  const sort: TrackSort = isSort(raw) ? raw : "title";
+  const setSort = (next: TrackSort) =>
+    setParams((p) => {
+      p.set("orden", next);
+      return p;
+    }, { replace: true });
   const pages = useTrackPages(sort);
   const rows = (pages.data?.pages.flat() ?? []).map((track) => ({ track, key: String(track.id) }));
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = pages;
@@ -87,7 +96,10 @@ export function Home() {
   const folders = useFolders();
   const albums = useAlbums();
   const recent = useRecentAlbums().data ?? [];
-  const [chosen, setChosen] = useState<Tab | null>(storedTab);
+  const [params, setParams] = useSearchParams();
+  const fromUrl = tabs.find((t) => t.param === params.get("vista"))?.id ?? null;
+  const [stored] = useState<Tab | null>(storedTab);
+  const chosen = fromUrl ?? stored;
 
   if (folders.data && folders.data.length === 0) {
     return (
@@ -107,8 +119,9 @@ export function Home() {
   const fallback: Tab | null = albums.data ? (albums.data.length > 0 ? "albums" : "songs") : null;
   const tab = chosen ?? fallback;
 
+  // The tab lives in the URL (back/forward return to it) and is remembered for the next visit.
   function choose(next: Tab) {
-    setChosen(next);
+    setParams({ vista: tabs.find((t) => t.id === next)!.param });
     try {
       localStorage.setItem(TAB_KEY, next);
     } catch {

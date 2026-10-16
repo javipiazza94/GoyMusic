@@ -17,8 +17,11 @@ export function AppShell() {
   useShortcuts();
   return (
     <div className={styles.shell} data-queue={queueOpen || undefined}>
+      <button type="button" className={styles.skip} onClick={() => main?.focus()}>
+        Saltar al contenido
+      </button>
       <Sidebar />
-      <main className={styles.main} ref={setMain}>
+      <main className={styles.main} ref={setMain} tabIndex={-1}>
         <ScrollParent.Provider value={main}>
           <AppRoutes />
         </ScrollParent.Provider>

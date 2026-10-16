@@ -110,3 +110,20 @@ test("the selection follows the rows when more of them load or they are reordere
   act(() => setRows([...first].reverse()));
   expect(selected()).toEqual(["Song 2", "Song 3"]);
 });
+
+test("alt+arrows reorder a row from the keyboard", async () => {
+  const onReorder = vi.fn();
+  const { user } = renderAt("/", <TrackList label="Canciones" rows={rowsOf(5)} onPlay={() => {}} onReorder={onReorder} />);
+  await user.click(screen.getByText("Song 2"));
+  await user.keyboard("{Alt>}{ArrowDown}{/Alt}");
+  expect(onReorder).toHaveBeenLastCalledWith(1, 2);
+  await user.keyboard("{Alt>}{ArrowUp}{/Alt}");
+  expect(onReorder).toHaveBeenLastCalledWith(2, 1);
+});
+
+test("lists that cannot be reordered ignore alt+arrows", async () => {
+  const { user } = renderAt("/", <TrackList label="Canciones" rows={rowsOf(5)} onPlay={() => {}} />);
+  await user.click(screen.getByText("Song 2"));
+  await user.keyboard("{Alt>}{ArrowDown}{/Alt}");
+  expect(document.activeElement?.textContent).toContain("Song 2");
+});

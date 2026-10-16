@@ -19,6 +19,8 @@
 .main {
   grid-area: main;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none; /* focused by the skip link; it is a region, not a control */
   min-width: 0;
   /* views adapt to the room they get (the queue can take part of the window) */
   container-type: inline-size;
@@ -42,4 +44,22 @@
       "sidebar main"
       "player player";
   }
+}
+
+/* Skip link: off-screen until focused with the keyboard. */
+.skip {
+  position: fixed;
+  top: var(--space-xs);
+  left: var(--space-xs);
+  z-index: 60;
+  padding: var(--space-xs) var(--space-md);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  transform: translateY(-200%);
+}
+
+.skip:focus-visible {
+  transform: none;
 }

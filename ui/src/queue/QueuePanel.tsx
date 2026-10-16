@@ -97,6 +97,14 @@ export function QueuePanel() {
                 key={`${index}-${track.id}`}
                 className={styles.row}
                 draggable
+                tabIndex={0}
+                aria-label={`${track.title}, posición ${index + 1} de ${userQueue.length}. Alt+flechas para moverla`}
+                onKeyDown={(e) => {
+                  if (!e.altKey || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+                  e.preventDefault();
+                  const to = index + (e.key === "ArrowDown" ? 1 : -1);
+                  if (to >= 0 && to < userQueue.length) runCommand(commands.queueMove(index, to));
+                }}
                 data-drop={dropAt === index || undefined}
                 onDragStart={(e) => writeDrag(e.dataTransfer, { ids: [track.id], from: { list: QUEUE_LIST, indexes: [index] } })}
                 onDragOver={(e) => {

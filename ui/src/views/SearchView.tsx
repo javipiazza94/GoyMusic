@@ -64,7 +64,10 @@ export function SearchView() {
         type="search"
         className={styles.searchBox}
         aria-label="Buscar en tu biblioteca"
-        placeholder="Artistas, álbumes o canciones"
+        name="q"
+        autoComplete="off"
+        spellCheck={false}
+        placeholder="Artistas, álbumes o canciones…"
         value={q}
         autoFocus
         onChange={(e) => setParams(e.target.value ? { q: e.target.value } : {}, { replace: true })}

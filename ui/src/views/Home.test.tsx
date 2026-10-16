@@ -28,12 +28,21 @@ test("home falls back to songs when there are no albums", async () => {
   expect(commands.play).toHaveBeenCalledWith({ kind: "library", id: "title" }, 1);
 });
 
-test("home remembers the chosen tab", async () => {
+test("home keeps the chosen tab in the url and remembers it", async () => {
   vi.mocked(commands.folders).mockResolvedValue(ok([folder]));
   vi.mocked(commands.albums).mockResolvedValue(ok([album]));
-  const { user } = renderAt("/");
+  const { user, path } = renderAt("/");
   await user.click(await screen.findByRole("tab", { name: "Artistas" }));
+  expect(path()).toBe("/?vista=artistas");
   expect(localStorage.getItem("goymusic.homeTab")).toBe("artists");
+});
+
+test("home opens the tab and order named in the url", async () => {
+  vi.mocked(commands.folders).mockResolvedValue(ok([folder]));
+  vi.mocked(commands.albums).mockResolvedValue(ok([album]));
+  renderAt("/?vista=canciones&orden=recentlyAdded");
+  expect((await screen.findByRole("tab", { name: "Canciones" })).getAttribute("aria-selected")).toBe("true");
+  await vi.waitFor(() => expect(commands.tracks).toHaveBeenLastCalledWith("recentlyAdded", 0, 500));
 });
 
 test("songs can be sorted", async () => {
