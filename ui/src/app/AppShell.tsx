@@ -1,3 +1,4 @@
+import { PlayerBar } from "../player/PlayerBar";
 import { AppRoutes } from "./routes";
 import { Sidebar } from "./Sidebar";
 import styles from "./AppShell.module.css";
@@ -17,7 +18,9 @@ export function AppShell() {
           <h2 className={styles.queueTitle}>Cola</h2>
         </aside>
       )}
-      <footer className={styles.player} />
+      <footer className={styles.player}>
+        <PlayerBar />
+      </footer>
     </div>
   );
 }

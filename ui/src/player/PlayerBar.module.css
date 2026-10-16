@@ -1,0 +1,223 @@
+.bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-lg);
+  height: 100%;
+  padding: 0 var(--space-md);
+}
+
+.now {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.idle {
+  color: var(--color-ink-3);
+}
+
+.thumb {
+  flex: none;
+  width: 56px;
+}
+
+.meta {
+  display: grid;
+  min-width: 0;
+}
+
+.title,
+.artists {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.artists {
+  color: var(--color-ink-2);
+  font-size: var(--text-sm);
+}
+
+.center {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink-2);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.iconButton:hover:not(:disabled) {
+  color: var(--color-ink);
+  background: var(--color-paper-3);
+}
+
+.iconButton:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.iconButton[aria-pressed="true"] {
+  color: var(--color-accent);
+}
+
+.iconButton[data-liked] {
+  color: var(--color-accent-2);
+}
+
+.iconButton:disabled,
+.play:disabled {
+  opacity: 0.4;
+}
+
+.play {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.play:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.play:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.seek {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) 3.5rem;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  max-width: 40rem;
+}
+
+.time {
+  font: var(--text-xs) / 1 var(--font-mono);
+  color: var(--color-ink-3);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  width: 9.5rem;
+}
+
+.volume .filament {
+  flex: 1;
+}
+
+/* The filament: a hairline track whose played part is lit (it glows in the dark theme). */
+.filament {
+  position: relative;
+  height: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.filament::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-3);
+}
+
+.filamentFill {
+  position: absolute;
+  left: 0;
+  width: var(--progress);
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  box-shadow: 0 0 10px 1px var(--color-glow);
+  pointer-events: none;
+}
+
+.filamentFill[data-quiet] {
+  box-shadow: none;
+}
+
+.filament input {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  height: 16px;
+  cursor: pointer;
+}
+
+.filament input:disabled {
+  cursor: default;
+}
+
+.filament input::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.filament input::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.filament:hover input:not(:disabled)::-webkit-slider-thumb,
+.filament input:focus-visible::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.filament input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+}

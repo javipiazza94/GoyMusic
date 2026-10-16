@@ -9,6 +9,7 @@ export const keys = {
   album: (id: number) => ["library", "album", id],
   artist: (id: number) => ["library", "artist", id],
   folders: ["library", "folders"],
+  artists: ["library", "artists"],
   tracks: ["library", "tracks"],
   recent: ["library", "recent"],
   search: (q: string) => ["library", "search", q],
