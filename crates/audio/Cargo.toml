@@ -1,0 +1,20 @@
+[package]
+name = "goymusic-audio"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+cpal.workspace = true
+goymusic-core = { path = "../core" }
+lofty.workspace = true
+rand.workspace = true
+ringbuf.workspace = true
+rubato.workspace = true
+symphonia.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+flacenc.workspace = true
+hound.workspace = true
+tempfile.workspace = true
