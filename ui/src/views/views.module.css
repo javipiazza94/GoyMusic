@@ -1,0 +1,30 @@
+.page {
+  padding: var(--space-xl) var(--space-xl) var(--space-2xl);
+}
+
+.title {
+  font: var(--text-display) / 1.05 var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-sm);
+  padding: var(--space-3xl) var(--space-xl);
+  color: var(--color-ink-2);
+  max-width: 36rem;
+}
+
+.emptyTitle {
+  font: var(--text-xl) / 1.1 var(--font-display);
+  font-weight: 400;
+  color: var(--color-ink);
+}
+
+.emptyLink {
+  color: var(--color-accent);
+}

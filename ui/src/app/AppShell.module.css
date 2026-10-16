@@ -1,0 +1,44 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) var(--player-h);
+  grid-template-areas:
+    "sidebar main"
+    "player player";
+  height: 100%;
+  background: var(--color-paper);
+}
+
+.shell[data-queue] {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--queue-w);
+  grid-template-areas:
+    "sidebar main queue"
+    "player player player";
+}
+
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  min-width: 0;
+  /* The one atmospheric bloom: fixed to the view, it does not scroll with the content. */
+  background:
+    radial-gradient(70% 55% at 15% 0%, var(--color-bloom), transparent 70%) no-repeat,
+    var(--color-paper);
+}
+
+.queue {
+  grid-area: queue;
+  overflow-y: auto;
+  background: var(--color-paper-2);
+  padding: var(--space-lg) var(--space-md);
+}
+
+.queueTitle {
+  font: 600 var(--text-md) / 1.2 var(--font-body);
+}
+
+.player {
+  grid-area: player;
+  background: var(--color-paper-2);
+  min-width: 0;
+}

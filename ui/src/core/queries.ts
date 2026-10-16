@@ -42,3 +42,14 @@ export function formatMs(ms: number): string {
   const total = Math.floor(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
+
+export function usePlaylists() {
+  return useQuery({ queryKey: keys.playlists, queryFn: async () => unwrap(await commands.playlists()) });
+}
+
+export function usePlaylistFolders() {
+  return useQuery({
+    queryKey: [...keys.playlists, "folders"],
+    queryFn: async () => unwrap(await commands.playlistFolders()),
+  });
+}

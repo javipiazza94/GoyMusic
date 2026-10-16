@@ -2,7 +2,8 @@
 export type IconName =
   | "play" | "pause" | "next" | "previous" | "shuffle" | "repeat" | "repeatOne" | "heart" | "heartFilled"
   | "queue" | "volume" | "volumeMuted" | "search" | "home" | "settings" | "plus" | "folder" | "more" | "close"
-  | "music";
+  | "music"
+  | "import";
 
 const paths: Record<IconName, string> = {
   play: "M7 4.5v15l12-7.5z",
@@ -25,6 +26,7 @@ const paths: Record<IconName, string> = {
   more: "M6 12h.01M12 12h.01M18 12h.01",
   close: "M6 6l12 12M18 6L6 18",
   music: "M9 17.5V6l10-2v11.5M9 17.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 15.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z",
+  import: "M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14",
 };
 
 const filled = new Set<IconName>(["play", "pause", "heartFilled"]);
