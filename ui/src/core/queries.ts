@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { commands } from "../bindings";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { commands, type TrackSort } from "../bindings";
 import { unwrap } from "./result";
 
 /** Query keys. Core events invalidate by prefix: `library`, `playlists`, `likes`. */
@@ -23,9 +23,32 @@ export function useAlbums() {
   return useQuery({ queryKey: keys.albums, queryFn: async () => unwrap(await commands.albums()) });
 }
 
-/** First page of songs by title; enough for the development shell. */
-export function useTracks() {
-  return useQuery({ queryKey: keys.tracks, queryFn: async () => unwrap(await commands.tracks("title", 0, 500)) });
+export const TRACK_PAGE = 500;
+
+/** All songs in pages of 500; the next page loads when the list nears its end. */
+export function useTrackPages(sort: TrackSort) {
+  return useInfiniteQuery({
+    queryKey: [...keys.tracks, sort],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => unwrap(await commands.tracks(sort, pageParam, TRACK_PAGE)),
+    getNextPageParam: (last, pages) => (last.length < TRACK_PAGE ? undefined : pages.length * TRACK_PAGE),
+  });
+}
+
+export function useAlbum(id: number) {
+  return useQuery({ queryKey: keys.album(id), queryFn: async () => unwrap(await commands.album(id)) });
+}
+
+export function useArtist(id: number) {
+  return useQuery({ queryKey: keys.artist(id), queryFn: async () => unwrap(await commands.artist(id)) });
+}
+
+export function useArtists() {
+  return useQuery({ queryKey: keys.artists, queryFn: async () => unwrap(await commands.artists()) });
+}
+
+export function useRecentAlbums() {
+  return useQuery({ queryKey: keys.recent, queryFn: async () => unwrap(await commands.recentAlbums(12)) });
 }
 
 export function useFolders() {
