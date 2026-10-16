@@ -5,10 +5,10 @@ import App from "./App";
 import { commands } from "./bindings";
 import { formatMs } from "./core/queries";
 import { usePlayer } from "./core/player-store";
-import { ok } from "./test/fixtures";
+import { ok, track } from "./test/fixtures";
 
 vi.mock("./bindings", () => ({
-  commands: { albums: vi.fn(), folders: vi.fn(), play: vi.fn(), addFolder: vi.fn(), previous: vi.fn(), next: vi.fn() },
+  commands: { albums: vi.fn(), tracks: vi.fn(), folders: vi.fn(), play: vi.fn(), addFolder: vi.fn(), previous: vi.fn(), next: vi.fn() },
 }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 
@@ -18,6 +18,7 @@ beforeEach(() => {
   );
   vi.mocked(commands.folders).mockResolvedValue(ok([{ id: 1, path: "/home/javi/Música" }]));
   vi.mocked(commands.play).mockResolvedValue(ok(null));
+  vi.mocked(commands.tracks).mockResolvedValue(ok([track(5, "Levels"), track(9, "Clarity")]));
   usePlayer.setState({ view: null, positionMs: 0, scan: null, notices: [] });
 });
 
@@ -35,6 +36,13 @@ test("shows albums and plays one on click", async () => {
   expect(await screen.findByText("/home/javi/Música")).toBeTruthy();
   fireEvent.click(await screen.findByRole("button", { name: /OK Computer/ }));
   expect(commands.play).toHaveBeenCalledWith({ kind: "album", id: 7 }, 0);
+});
+
+test("lists every song, also those without an album, and plays from the clicked one", async () => {
+  renderApp();
+  fireEvent.click(await screen.findByRole("button", { name: /Clarity/ }));
+  expect(commands.tracks).toHaveBeenCalledWith("title", 0, 500);
+  expect(commands.play).toHaveBeenCalledWith({ kind: "tracks", id: [5, 9] }, 1);
 });
 
 test("shows scan progress while scanning", async () => {

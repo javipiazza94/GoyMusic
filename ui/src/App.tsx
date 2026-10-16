@@ -3,12 +3,14 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { commands } from "./bindings";
 import { usePlayer } from "./core/player-store";
-import { artUrl, formatMs, useAlbums, useFolders } from "./core/queries";
+import { artUrl, formatMs, useAlbums, useFolders, useTracks } from "./core/queries";
 import { unwrap } from "./core/result";
 
 export default function App() {
   const folders = useFolders();
   const albums = useAlbums();
+  const tracks = useTracks();
+  const trackIds = tracks.data?.map((t) => t.id) ?? [];
   const { view, positionMs, scan, notices, togglePlay, dismiss } = usePlayer();
 
   async function addFolder() {
@@ -41,6 +43,18 @@ export default function App() {
             </li>
           ))}
         </ul>
+      </section>
+      <section>
+        <h2>Canciones</h2>
+        <ol>
+          {tracks.data?.map((t, i) => (
+            <li key={t.id}>
+              <button onClick={() => void commands.play({ kind: "tracks", id: trackIds }, i)}>
+                {t.title} — {t.artists.join(", ") || "Desconocido"} · {formatMs(t.durationMs)}
+              </button>
+            </li>
+          ))}
+        </ol>
       </section>
       <footer>
         {view?.track && (

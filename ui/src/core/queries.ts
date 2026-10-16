@@ -9,6 +9,7 @@ export const keys = {
   album: (id: number) => ["library", "album", id],
   artist: (id: number) => ["library", "artist", id],
   folders: ["library", "folders"],
+  tracks: ["library", "tracks"],
   recent: ["library", "recent"],
   search: (q: string) => ["library", "search", q],
   playlists: ["playlists"],
@@ -19,6 +20,11 @@ export const keys = {
 
 export function useAlbums() {
   return useQuery({ queryKey: keys.albums, queryFn: async () => unwrap(await commands.albums()) });
+}
+
+/** First page of songs by title; enough for the development shell. */
+export function useTracks() {
+  return useQuery({ queryKey: keys.tracks, queryFn: async () => unwrap(await commands.tracks("title", 0, 500)) });
 }
 
 export function useFolders() {
