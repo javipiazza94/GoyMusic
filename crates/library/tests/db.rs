@@ -41,3 +41,21 @@ fn file_db_is_created_with_parent_dirs_and_reopens() {
     let mode: String = db.conn().query_row("PRAGMA journal_mode", [], |r| r.get(0)).unwrap();
     assert_eq!(mode, "wal");
 }
+
+#[test]
+fn second_writer_waits_instead_of_failing() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("lib.db");
+    let mut a = Db::open(&path).unwrap();
+    let b = Db::open(&path).unwrap();
+    let tx = a.conn_mut().transaction().unwrap();
+    tx.execute("INSERT INTO settings (key, value) VALUES ('k', '1')", [])
+        .unwrap();
+    let writer = std::thread::spawn(move || goymusic_library::state::set_setting(&b, "other", "2"));
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    tx.commit().unwrap();
+    writer
+        .join()
+        .unwrap()
+        .expect("waited for the lock instead of SQLITE_BUSY");
+}

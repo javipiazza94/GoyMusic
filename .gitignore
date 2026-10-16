@@ -9,3 +9,4 @@ node_modules/
 target/
 dist/
 .superpowers/
+apps/desktop/gen/

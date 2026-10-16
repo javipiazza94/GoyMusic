@@ -2,7 +2,7 @@ mod common;
 
 use common::{write_tagged_wav, Meta};
 use goymusic_core::events::EventBus;
-use goymusic_core::{AlbumId, TrackId};
+use goymusic_core::{AlbumId, ArtistId, TrackId};
 use goymusic_library::db::Db;
 use goymusic_library::error::LibraryError;
 use goymusic_library::queries::{self, TrackSort};
@@ -118,5 +118,42 @@ fn unknown_ids_are_not_found() {
     assert!(matches!(
         queries::album(&db, AlbumId(999)),
         Err(LibraryError::NotFound { kind: "album", id: 999 })
+    ));
+}
+
+#[test]
+fn artist_lookup_and_tracks_in_album_order() {
+    let dir = tempfile::tempdir().unwrap();
+    let song = |t, album, year, n| Meta {
+        album: Some(album),
+        album_artist: Some("Ana"),
+        track: Some(n),
+        year: Some(year),
+        ..Meta::new(t, "Ana")
+    };
+    write_tagged_wav(&dir.path().join("new/2.wav"), 0.2, &song("New Two", "Newer", 2001, 2));
+    write_tagged_wav(&dir.path().join("new/1.wav"), 0.2, &song("New One", "Newer", 2001, 1));
+    write_tagged_wav(&dir.path().join("old/2.wav"), 0.2, &song("Old Two", "Older", 1999, 2));
+    write_tagged_wav(&dir.path().join("old/1.wav"), 0.2, &song("Old One", "Older", 1999, 1));
+    write_tagged_wav(&dir.path().join("bea.wav"), 0.2, &Meta::new("Other", "Bea"));
+    let mut db = Db::open_in_memory().unwrap();
+    folders::add(&db, dir.path()).unwrap();
+    scanner::scan(&mut db, &EventBus::new()).unwrap();
+
+    let ana = queries::artists(&db)
+        .unwrap()
+        .into_iter()
+        .find(|a| a.name == "Ana")
+        .unwrap();
+    assert_eq!(queries::artist(&db, ana.id).unwrap(), ana);
+    let titles: Vec<_> = queries::artist_tracks(&db, ana.id)
+        .unwrap()
+        .into_iter()
+        .map(|t| t.title)
+        .collect();
+    assert_eq!(titles, ["Old One", "Old Two", "New One", "New Two"]);
+    assert!(matches!(
+        queries::artist(&db, ArtistId(999)),
+        Err(LibraryError::NotFound { kind: "artist", .. })
     ));
 }

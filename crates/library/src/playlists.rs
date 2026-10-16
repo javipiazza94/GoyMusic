@@ -2,7 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use goymusic_core::model::{Playlist, PlaylistFolder, PlaylistItem, Track};
 use goymusic_core::{PlaylistFolderId, PlaylistId, TrackId};
-use rusqlite::{params, Connection, OptionalExtension, Row};
+use rusqlite::{params, Connection, OptionalExtension, Row, TransactionBehavior};
 
 use crate::db::Db;
 use crate::error::{LibraryError, Result};
@@ -117,7 +117,9 @@ fn rewrite_items(conn: &Connection, id: PlaylistId, track_ids: &[i64]) -> Result
 }
 
 pub fn add_tracks(db: &mut Db, id: PlaylistId, tracks: &[TrackId]) -> Result<()> {
-    let tx = db.conn_mut().transaction()?;
+    let tx = db
+        .conn_mut()
+        .transaction_with_behavior(TransactionBehavior::Immediate)?;
     ensure_exists(&tx, id)?;
     let mut ids = item_track_ids(&tx, id)?;
     ids.extend(tracks.iter().map(|t| t.0));
@@ -127,7 +129,9 @@ pub fn add_tracks(db: &mut Db, id: PlaylistId, tracks: &[TrackId]) -> Result<()>
 }
 
 pub fn remove_items(db: &mut Db, id: PlaylistId, positions: &[u32]) -> Result<()> {
-    let tx = db.conn_mut().transaction()?;
+    let tx = db
+        .conn_mut()
+        .transaction_with_behavior(TransactionBehavior::Immediate)?;
     ensure_exists(&tx, id)?;
     let ids = item_track_ids(&tx, id)?;
     if let Some(&bad) = positions.iter().find(|&&p| p as usize >= ids.len()) {
@@ -148,7 +152,9 @@ pub fn remove_items(db: &mut Db, id: PlaylistId, positions: &[u32]) -> Result<()
 }
 
 pub fn move_item(db: &mut Db, id: PlaylistId, from: u32, to: u32) -> Result<()> {
-    let tx = db.conn_mut().transaction()?;
+    let tx = db
+        .conn_mut()
+        .transaction_with_behavior(TransactionBehavior::Immediate)?;
     ensure_exists(&tx, id)?;
     let mut ids = item_track_ids(&tx, id)?;
     for position in [from, to] {

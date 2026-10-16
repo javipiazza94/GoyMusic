@@ -229,3 +229,17 @@ fn move_with_unreadable_destination_keeps_original() {
     assert_eq!(count(&db, "SELECT count(*) FROM tracks"), 1);
     assert_eq!(count(&db, "SELECT count(*) FROM likes"), 1);
 }
+
+#[test]
+fn a_cancelled_scan_writes_nothing() {
+    let dir = tempfile::tempdir().unwrap();
+    write_tagged_wav(&dir.path().join("a.wav"), 0.2, &Meta::new("A", "Ana"));
+    let (mut db, events) = library(dir.path());
+    let cancel = std::sync::atomic::AtomicBool::new(true);
+    let result = scanner::scan_cancellable(&mut db, &events, &cancel);
+    assert!(
+        matches!(result, Err(goymusic_library::error::LibraryError::Cancelled)),
+        "{result:?}"
+    );
+    assert_eq!(count(&db, "SELECT count(*) FROM tracks"), 0);
+}

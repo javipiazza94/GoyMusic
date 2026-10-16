@@ -9,7 +9,9 @@ use crate::db::Db;
 use crate::error::Result;
 use crate::playlists;
 
-#[derive(Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct ImportReport {
     pub playlist: Playlist,
     pub matched: usize,

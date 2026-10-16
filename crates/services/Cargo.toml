@@ -1,0 +1,25 @@
+[package]
+name = "goymusic-services"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dirs.workspace = true
+goymusic-audio = { path = "../audio" }
+goymusic-core = { path = "../core" }
+goymusic-library = { path = "../library" }
+notify.workspace = true
+serde.workspace = true
+specta = { workspace = true, optional = true }
+thiserror.workspace = true
+tracing.workspace = true
+
+[features]
+specta = ["dep:specta", "goymusic-library/specta", "goymusic-core/specta"]
+
+[dev-dependencies]
+hound.workspace = true
+image.workspace = true
+lofty.workspace = true
+tempfile.workspace = true

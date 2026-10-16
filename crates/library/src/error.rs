@@ -16,6 +16,8 @@ pub enum LibraryError {
     InvalidPosition { position: usize, len: usize },
     #[error("folder {0} overlaps a library folder")]
     FolderOverlap(String),
+    #[error("scan cancelled")]
+    Cancelled,
     #[error("path is not valid UTF-8: {0}")]
     NonUtf8Path(String),
 }

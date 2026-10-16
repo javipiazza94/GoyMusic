@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use crate::{AlbumId, ArtistId, FolderId, PlaylistFolderId, PlaylistId, TrackId};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct Track {
     pub id: TrackId,
     pub path: String,
@@ -19,6 +21,8 @@ pub struct Track {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct Album {
     pub id: AlbumId,
     pub title: String,
@@ -28,18 +32,24 @@ pub struct Album {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct Artist {
     pub id: ArtistId,
     pub name: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct Folder {
     pub id: FolderId,
     pub path: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct Playlist {
     pub id: PlaylistId,
     pub name: String,
@@ -48,6 +58,8 @@ pub struct Playlist {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct PlaylistFolder {
     pub id: PlaylistFolderId,
     pub name: String,
@@ -55,6 +67,8 @@ pub struct PlaylistFolder {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct PlaylistItem {
     pub position: u32,
     pub track: Track,

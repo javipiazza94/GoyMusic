@@ -16,7 +16,9 @@ use crate::queries::{self, track_from_row, TRACK_SELECT};
 pub const FUZZY_THRESHOLD: f64 = 0.85;
 pub const FUZZY_BELOW: usize = 5;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
 pub struct SearchResults {
     pub top: Option<TopResult>,
     pub tracks: Vec<Track>,
@@ -24,7 +26,9 @@ pub struct SearchResults {
     pub artists: Vec<Artist>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(tag = "kind", content = "item", rename_all = "camelCase")]
 pub enum TopResult {
     Artist(Artist),
     Album(Album),
