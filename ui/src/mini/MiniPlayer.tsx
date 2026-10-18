@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { commands } from "../bindings";
 import { Icon } from "../components/Icon";
 import { usePlayer } from "../core/player-store";
@@ -13,9 +13,14 @@ export function MiniPlayer() {
   const view = usePlayer((s) => s.view);
   const togglePlay = usePlayer((s) => s.togglePlay);
   const [onTop, setOnTop] = useState(false);
+  const [canPin, setCanPin] = useState(false);
   const track = view?.track ?? null;
   const playing = view?.state === "playing";
   const seed = track ? (track.album ?? track.title) : "GoyMusic";
+
+  useEffect(() => {
+    void commands.miniCanStayOnTop().then(setCanPin, reportError);
+  }, []);
 
   function pin() {
     const next = !onTop;
@@ -58,9 +63,11 @@ export function MiniPlayer() {
         <button type="button" className={styles.icon} aria-label="Cerrar mini reproductor" onClick={() => void commands.hideMiniPlayer().catch(reportError)}>
           <Icon name="close" size={16} />
         </button>
-        <button type="button" className={styles.icon} aria-label="Fijar encima" aria-pressed={onTop} onClick={pin}>
-          <Icon name="pin" size={16} />
-        </button>
+        {canPin && (
+          <button type="button" className={styles.icon} aria-label="Fijar encima" aria-pressed={onTop} onClick={pin}>
+            <Icon name="pin" size={16} />
+          </button>
+        )}
         <button type="button" className={styles.icon} aria-label="Abrir GoyMusic" onClick={() => void commands.showMainWindow().catch(reportError)}>
           <Icon name="home" size={16} />
         </button>

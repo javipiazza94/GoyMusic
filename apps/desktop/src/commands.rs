@@ -321,6 +321,13 @@ pub async fn set_mini_on_top(app: tauri::AppHandle, on: bool) {
     crate::window::set_mini_on_top(&app, on);
 }
 
+/// False where the pin cannot work (Wayland): the mini player then hides it.
+#[tauri::command]
+#[specta::specta]
+pub async fn mini_can_stay_on_top() -> bool {
+    crate::window::mini_can_stay_on_top()
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn show_main_window(app: tauri::AppHandle) {

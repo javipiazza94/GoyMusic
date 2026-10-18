@@ -50,9 +50,37 @@ pub fn hide_mini(app: &AppHandle) {
     }
 }
 
+/// Whether the window manager honours "always on top" for our windows. Wayland gives
+/// clients no such control, so there it only works when GTK runs through XWayland
+/// (`GDK_BACKEND=x11`).
+pub fn can_stay_on_top(session_type: Option<&str>, gdk_backend: Option<&str>) -> bool {
+    session_type != Some("wayland") || gdk_backend.is_some_and(|b| b.trim().starts_with("x11"))
+}
+
+/// [`can_stay_on_top`] for the running session.
+pub fn mini_can_stay_on_top() -> bool {
+    let session = std::env::var("XDG_SESSION_TYPE").ok();
+    let backend = std::env::var("GDK_BACKEND").ok();
+    can_stay_on_top(session.as_deref(), backend.as_deref())
+}
+
 /// Keeps the mini player above other windows (or not).
 pub fn set_mini_on_top(app: &AppHandle, on: bool) {
     if let Some(window) = app.get_webview_window("mini") {
         let _ = window.set_always_on_top(on);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::can_stay_on_top;
+
+    #[test]
+    fn staying_on_top_needs_x11() {
+        assert!(can_stay_on_top(Some("x11"), None));
+        assert!(can_stay_on_top(None, None));
+        assert!(!can_stay_on_top(Some("wayland"), None));
+        assert!(!can_stay_on_top(Some("wayland"), Some("wayland,x11")));
+        assert!(can_stay_on_top(Some("wayland"), Some("x11")));
     }
 }

@@ -38,6 +38,22 @@ pub fn menu_entries(view: Option<&PlayerView>) -> Vec<MenuEntry> {
     ]
 }
 
+/// The D-Bus name a StatusNotifier host (the panel that draws tray icons) owns.
+const STATUS_NOTIFIER_WATCHER: &str = "org.kde.StatusNotifierWatcher";
+
+/// Whether anything on the session bus will actually draw the tray icon. Building the icon
+/// succeeds even when nobody shows it (GNOME without the AppIndicator extension), so the
+/// window must not hide into a tray that isn't there.
+pub fn status_notifier_host_present() -> bool {
+    futures_lite::future::block_on(async {
+        let conn = mpris_server::zbus::Connection::session().await.ok()?;
+        let dbus = mpris_server::zbus::fdo::DBusProxy::new(&conn).await.ok()?;
+        let name = STATUS_NOTIFIER_WATCHER.try_into().ok()?;
+        dbus.name_has_owner(name).await.ok()
+    })
+    .unwrap_or(false)
+}
+
 /// Builds the tray icon and keeps its menu in step with the player. `Err` when the desktop
 /// has no tray (e.g. GNOME without the AppIndicator extension): the caller then treats
 /// closing the window as quitting.

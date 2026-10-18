@@ -8,7 +8,7 @@ mod forward;
 mod logging;
 pub mod mpris;
 mod notify;
-mod tray;
+pub mod tray;
 mod window;
 
 use std::path::Path;
@@ -77,6 +77,7 @@ pub fn specta_builder() -> Builder<tauri::Wry> {
             show_mini_player,
             hide_mini_player,
             set_mini_on_top,
+            mini_can_stay_on_top,
             show_main_window,
         ])
         .events(collect_events![CoreEvent])
@@ -165,7 +166,10 @@ pub fn run() {
                 services.events().subscribe(),
             );
             match tray::create(app.handle(), services.clone(), services.events().subscribe()) {
-                Ok(()) => app.state::<TrayState>().0.store(true, Ordering::SeqCst),
+                Ok(()) if tray::status_notifier_host_present() => {
+                    app.state::<TrayState>().0.store(true, Ordering::SeqCst)
+                }
+                Ok(()) => tracing::warn!("no tray host on the session bus: closing the window will quit"),
                 Err(e) => tracing::warn!(error = %e, "no system tray: closing the window will quit"),
             }
             Ok(())

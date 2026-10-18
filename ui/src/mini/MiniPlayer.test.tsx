@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { commands } from "../bindings";
 import { usePlayer } from "../core/player-store";
 import { PlayerBar } from "../player/PlayerBar";
@@ -20,13 +20,22 @@ test("the mini player shows the track and toggles playback", async () => {
 test("pin on top toggles and calls the core", async () => {
   usePlayer.setState({ view: view() });
   const { user } = renderAt("/", <MiniPlayer />);
-  const pin = screen.getByRole("button", { name: "Fijar encima" });
+  const pin = await screen.findByRole("button", { name: "Fijar encima" });
   expect(pin.getAttribute("aria-pressed")).toBe("false");
   await user.click(pin);
   expect(commands.setMiniOnTop).toHaveBeenLastCalledWith(true);
   expect(pin.getAttribute("aria-pressed")).toBe("true");
   await user.click(pin);
   expect(commands.setMiniOnTop).toHaveBeenLastCalledWith(false);
+});
+
+test("the pin is hidden when the window cannot stay on top", async () => {
+  vi.mocked(commands.miniCanStayOnTop).mockResolvedValue(false);
+  usePlayer.setState({ view: view() });
+  renderAt("/", <MiniPlayer />);
+  await screen.findByRole("button", { name: "Abrir GoyMusic" });
+  await vi.waitFor(() => expect(commands.miniCanStayOnTop).toHaveBeenCalled());
+  await vi.waitFor(() => expect(screen.queryByRole("button", { name: "Fijar encima" })).toBeNull());
 });
 
 test("open goes back to the main window and close hides the mini player", async () => {

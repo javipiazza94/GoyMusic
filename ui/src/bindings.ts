@@ -54,6 +54,8 @@ export const commands = {
 	showMiniPlayer: () => __TAURI_INVOKE<void>("show_mini_player"),
 	hideMiniPlayer: () => __TAURI_INVOKE<void>("hide_mini_player"),
 	setMiniOnTop: (on: boolean) => __TAURI_INVOKE<void>("set_mini_on_top", { on }),
+	/**  False where the pin cannot work (Wayland): the mini player then hides it. */
+	miniCanStayOnTop: () => __TAURI_INVOKE<boolean>("mini_can_stay_on_top"),
 	showMainWindow: () => __TAURI_INVOKE<void>("show_main_window"),
 };
 
