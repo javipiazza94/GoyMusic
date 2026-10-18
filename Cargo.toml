@@ -8,14 +8,18 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
+async-channel = "=2.5.0"
 cpal = "=0.15.3"
 deunicode = "1"
 dirs = "=7.0.0"
 flacenc = "=0.5.1"
+futures-lite = "=2.6.1"
 hound = "3"
 image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
 lofty = "0.21"
+mpris-server = "=0.10.0"
 notify = "=8.2.0"
+notify-rust = { version = "=4.18.1", default-features = false, features = ["z"] }
 rand = "0.8"
 rayon = "1"
 ringbuf = "=0.4.8"
@@ -28,9 +32,10 @@ specta = { version = "=2.0.0-rc.25", features = ["derive"] }
 specta-typescript = "=0.0.12"
 strsim = "0.11"
 symphonia = { version = "=0.5.5", default-features = false, features = ["mp3", "flac", "ogg", "vorbis", "wav", "pcm", "aac", "isomp4", "alac"] }
-tauri = "=2.12.1"
+tauri = { version = "=2.12.1", features = ["tray-icon", "image-png"] }
 tauri-build = "=2.7.1"
 tauri-plugin-dialog = "=2.8.1"
+tauri-plugin-single-instance = "=2.5.2"
 tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 tempfile = "3"
 thiserror = "2"

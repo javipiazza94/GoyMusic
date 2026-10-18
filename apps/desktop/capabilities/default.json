@@ -1,7 +1,14 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main window: core APIs and the folder/file pickers",
-  "windows": ["main"],
-  "permissions": ["core:default", "dialog:default"]
+  "description": "Main and mini player windows: core APIs and the folder/file pickers",
+  "windows": [
+    "main",
+    "mini"
+  ],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "core:window:allow-start-dragging"
+  ]
 }

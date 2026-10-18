@@ -4,9 +4,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router";
 import { AppShell } from "./app/AppShell";
+import { MiniPlayer } from "./mini/MiniPlayer";
 import { initTheme } from "./core/theme";
 
 const mock = import.meta.env.MODE === "mock";
+/** The mini player window loads the same page with `?ventana=mini`. */
+const isMini = new URLSearchParams(location.search).get("ventana") === "mini";
 
 async function start() {
   // The mock must replace Tauri's IPC before anything talks to the core.
@@ -23,9 +26,13 @@ async function start() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <HashRouter>
-          <AppShell />
-        </HashRouter>
+        {isMini ? (
+          <MiniPlayer />
+        ) : (
+          <HashRouter>
+            <AppShell />
+          </HashRouter>
+        )}
         {mock && <MockBadge />}
       </QueryClientProvider>
     </StrictMode>,

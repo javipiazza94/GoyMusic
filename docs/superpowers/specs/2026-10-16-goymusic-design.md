@@ -135,7 +135,8 @@ Eventos v1: `PlayerStateChanged`, `PositionChanged` (~4 Hz), `QueueChanged`, `Pl
 - **Notificación** al cambiar de canción, con carátula.
 - **Bandeja del sistema**: cerrar la ventana no detiene la música; "Salir" sí.
 - **Instancia única**: abrirla otra vez enfoca la existente.
-- **Mini-reproductor**: ventana compacta, opcionalmente siempre encima.
+- **Mini-reproductor**: ventana compacta, opcionalmente siempre encima. Límite de plataforma: Wayland no deja a las apps quedarse encima, así que allí no se ofrece el pin (sí bajo X11 o con `GDK_BACKEND=x11`).
+- **Bandeja**: solo cuenta si hay un host StatusNotifier en el bus (`org.kde.StatusNotifierWatcher`); sin él (GNOME sin la extensión AppIndicator), cerrar la ventana sale de la app.
 
 ## 9. Errores, logs y pruebas
 

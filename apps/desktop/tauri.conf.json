@@ -17,6 +17,18 @@
         "height": 800,
         "minWidth": 900,
         "minHeight": 600,
+        "dragDropEnabled": false,
+        "label": "main"
+      },
+      {
+        "label": "mini",
+        "title": "GoyMusic · mini",
+        "url": "index.html?ventana=mini",
+        "width": 380,
+        "height": 128,
+        "resizable": false,
+        "decorations": false,
+        "visible": false,
         "dragDropEnabled": false
       }
     ],
@@ -25,7 +37,21 @@
     }
   },
   "bundle": {
-    "active": false,
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"]
+    "active": true,
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"],
+    "targets": [
+      "deb",
+      "appimage"
+    ],
+    "category": "Music",
+    "publisher": "Javier Puente Piazza",
+    "license": "GPL-3.0-or-later",
+    "shortDescription": "Reproductor de tu propia música",
+    "longDescription": "GoyMusic reproduce tu biblioteca de música local: playlists, cola, búsqueda, reproducción sin silencios y controles del escritorio (MPRIS).",
+    "linux": {
+      "deb": {
+        "depends": ["libayatana-appindicator3-1", "libasound2t64 | libasound2"]
+      }
+    }
   }
 }

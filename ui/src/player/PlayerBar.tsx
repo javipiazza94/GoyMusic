@@ -122,6 +122,15 @@ export function PlayerBar() {
       </div>
 
       <div className={styles.side}>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label="Mini reproductor"
+          title="Mini reproductor"
+          onClick={() => void commands.showMiniPlayer().catch(reportError)}
+        >
+          <Icon name="mini" />
+        </button>
         <button type="button" className={styles.iconButton} aria-label="Cola" aria-pressed={queueOpen} onClick={toggleQueue}>
           <Icon name="queue" />
         </button>

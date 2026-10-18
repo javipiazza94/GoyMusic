@@ -3,17 +3,23 @@
 
 pub mod art_protocol;
 mod commands;
+pub mod control;
 mod forward;
 mod logging;
+pub mod mpris;
+mod notify;
+pub mod tray;
+mod window;
 
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use goymusic_audio::cpal_sink::CpalSink;
 use goymusic_audio::sink::AudioSink;
 use goymusic_services::{Services, ServicesConfig};
 use specta_typescript::Typescript;
-use tauri::RunEvent;
+use tauri::{Manager, RunEvent, WindowEvent};
 use tauri_specta::{collect_commands, collect_events, Builder};
 
 pub use forward::CoreEvent;
@@ -68,6 +74,11 @@ pub fn specta_builder() -> Builder<tauri::Wry> {
             queue_move,
             player_view,
             settings,
+            show_mini_player,
+            hide_mini_player,
+            set_mini_on_top,
+            mini_can_stay_on_top,
+            show_main_window,
         ])
         .events(collect_events![CoreEvent])
         // ids are SQLite rowids and times are milliseconds: always far below 2^53
@@ -78,6 +89,10 @@ pub fn export_bindings(path: &Path) -> Result<(), specta_typescript::Error> {
     specta_builder().export(Typescript::default().header(BINDINGS_HEADER), path)
 }
 
+/// Whether the tray icon exists; without it, closing the window quits (see `window::on_close`).
+#[derive(Default)]
+struct TrayState(AtomicBool);
+
 pub fn run() {
     let log_guard = logging::init();
     #[cfg(debug_assertions)]
@@ -87,34 +102,85 @@ pub fn run() {
     ))) {
         tracing::warn!(error = %e, "could not export TypeScript bindings");
     }
-    let sink = Box::new(|| CpalSink::open_default().map(|s| Box::new(s) as Box<dyn AudioSink>));
-    let services = Arc::new(Services::start(ServicesConfig::default_paths(), sink).expect("start GoyMusic services"));
     let builder = specta_builder();
-    let art_services = services.clone();
     let art_pool = art_protocol::ArtPool::sized_for_this_machine();
-    let forward_services = services.clone();
     let app = tauri::Builder::default()
+        // first: a second launch hands over to the running instance (and exits) before
+        // this process opens the database, the audio device or starts a scan
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            window::show_main(app)
+        }))
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(builder.invoke_handler())
-        .manage(services.clone())
-        .register_asynchronous_uri_scheme_protocol("art", move |_ctx, request, responder| {
-            art_protocol::respond(
-                &art_pool,
-                art_services.clone(),
-                request.uri().path().to_owned(),
-                responder,
-            );
+        .manage(TrayState::default())
+        .register_asynchronous_uri_scheme_protocol("art", move |ctx, request, responder| {
+            match ctx.app_handle().try_state::<Arc<Services>>() {
+                Some(services) => art_protocol::respond(
+                    &art_pool,
+                    services.inner().clone(),
+                    request.uri().path().to_owned(),
+                    responder,
+                ),
+                None => responder.respond(art_protocol::unavailable()),
+            }
+        })
+        .on_window_event(|window, event| {
+            if let (WindowEvent::CloseRequested { api, .. }, "mini") = (event, window.label()) {
+                // the mini player is created once at startup; closing it only hides it
+                api.prevent_close();
+                let _ = window.hide();
+            }
+            if let (WindowEvent::CloseRequested { api, .. }, "main") = (event, window.label()) {
+                let tray = window.app_handle().state::<TrayState>().0.load(Ordering::SeqCst);
+                match window::on_close(tray) {
+                    window::CloseAction::Hide => {
+                        api.prevent_close();
+                        let _ = window.hide();
+                    }
+                    window::CloseAction::Quit => window.app_handle().exit(0),
+                }
+            }
         })
         .setup(move |app| {
+            let sink = Box::new(|| CpalSink::open_default().map(|s| Box::new(s) as Box<dyn AudioSink>));
+            let services = Arc::new(Services::start(ServicesConfig::default_paths(), sink)?);
+            app.manage(services.clone());
             builder.mount_events(app);
-            forward::start(app.handle().clone(), forward_services.events());
+            forward::start(app.handle().clone(), services.events());
+            let (raise_app, quit_app) = (app.handle().clone(), app.handle().clone());
+            mpris::spawn(
+                services.clone(),
+                services.events().subscribe(),
+                mpris::MprisHooks {
+                    raise: Box::new(move || window::show_main(&raise_app)),
+                    quit: Box::new(move || quit_app.exit(0)),
+                },
+            );
+            let focus_app = app.handle().clone();
+            notify::spawn(
+                notify::TrackNotifications::new(
+                    notify::DesktopNotifier::default(),
+                    services.clone(),
+                    Arc::new(move || window::main_is_focused(&focus_app)),
+                ),
+                services.events().subscribe(),
+            );
+            match tray::create(app.handle(), services.clone(), services.events().subscribe()) {
+                Ok(()) if tray::status_notifier_host_present() => {
+                    app.state::<TrayState>().0.store(true, Ordering::SeqCst)
+                }
+                Ok(()) => tracing::warn!("no tray host on the session bus: closing the window will quit"),
+                Err(e) => tracing::warn!(error = %e, "no system tray: closing the window will quit"),
+            }
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("build the Tauri app");
-    let code = app.run_return(move |_, event| {
+    let code = app.run_return(|app, event| {
         if let RunEvent::Exit = event {
-            services.shutdown();
+            if let Some(services) = app.try_state::<Arc<Services>>() {
+                services.shutdown();
+            }
         }
     });
     drop(log_guard);

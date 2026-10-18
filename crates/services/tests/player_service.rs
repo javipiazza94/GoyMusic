@@ -266,10 +266,16 @@ fn queued_tracks_that_leave_the_library_are_dropped_from_the_queue() {
         .tracks[0]
         .id;
     lib.services.play(PlayContext::Album(lib.album), 0).unwrap();
+    let events = lib.services.events().subscribe();
     lib.services.queue_add(vec![lib.tracks[1], gone, lib.tracks[2]]);
+    wait_for(&events, WAIT, |e| *e == Event::QueueChanged);
 
     lib.services.remove_folder(folder.id).unwrap();
-    assert!(eventually(|| lib.services.player_view().unwrap().user_queue.len() == 2));
+    // the view hides the vanished track at once; wait for the core to really drop it,
+    // which happens after the library update
+    wait_for(&events, WAIT, |e| *e == Event::LibraryUpdated);
+    wait_for(&events, WAIT, |e| *e == Event::QueueChanged);
+    assert_eq!(lib.services.player_view().unwrap().user_queue.len(), 2);
 
     // the panel's indexes now match the core's: removing the second entry removes tracks[2]
     lib.services.queue_remove(1);
