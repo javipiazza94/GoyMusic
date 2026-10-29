@@ -22,7 +22,7 @@ notify = "=8.2.0"
 notify-rust = { version = "=4.18.1", default-features = false, features = ["z"] }
 rand = "0.8"
 rayon = "1"
-ringbuf = "=0.4.8"
+ringbuf = "=0.5.3"
 rubato = "=0.16.2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 rusqlite_migration = "1.3"
