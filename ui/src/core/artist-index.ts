@@ -17,8 +17,3 @@ export function useArtistIndex(): Map<string, number> {
 }
 
 const EMPTY = new Map<string, number>();
-
-export function useArtistId(name: string | null): number | null {
-  const index = useArtistIndex();
-  return name ? (index.get(name.toLowerCase()) ?? null) : null;
-}
