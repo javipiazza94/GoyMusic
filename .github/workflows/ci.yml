@@ -26,7 +26,10 @@ jobs:
       # DONE.md: complejidad, secretos, vulnerabilidades, dependencias sin usar y tipos de la UI
       - uses: taiki-e/install-action@v2
         with:
-          tool: cargo-audit,cargo-machete,gitleaks
+          tool: cargo-audit,cargo-machete
+      - run: >-
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz
+          | sudo tar -xz -C /usr/local/bin gitleaks
       - run: scripts/check-quality.sh
       - run: cargo test --workspace
       - run: cargo test -p goymusic-audio --test mp3_gapless -- --ignored
@@ -37,7 +40,7 @@ jobs:
 
   bundle:
     # installable packages (spec §10.8), only for what lands on master
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: rust
     runs-on: ubuntu-24.04
     steps:
