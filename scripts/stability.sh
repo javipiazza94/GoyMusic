@@ -20,6 +20,6 @@ fi
 # Retrabajo: archivos que se vuelven a tocar a menos de 14 días de su cambio anterior.
 rework=$(git log --since="$since" --reverse --name-only --format='@%ct' | awk '
   /^@/ { t = substr($0, 2); next }
-  NF   { if ((f in last) && t - last[f] < 14*86400) n++; last[f] = t; f = "" }
-  END  { print n + 0 }' f="")
+  NF   { if (($0 in last) && t - last[$0] < 14*86400) n++; last[$0] = t }
+  END  { print n + 0 }')
 echo "Retoques a <14 días:      $rework  (cambios de archivo que repiten otro reciente)"
