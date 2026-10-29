@@ -48,8 +48,8 @@ else
   skip "dependencias sin usar" "instala: cargo install cargo-machete --locked"
 fi
 
-if [ -d ui/node_modules ]; then
-  run "tipos UI (tsc)" pnpm --dir ui exec tsc --noEmit
+if [ -x ui/node_modules/.bin/tsc ]; then
+  run "tipos UI (tsc)" ui/node_modules/.bin/tsc --noEmit -p ui
 else
   skip "tipos UI" "ejecuta: pnpm install"
 fi
