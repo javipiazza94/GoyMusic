@@ -23,6 +23,11 @@ jobs:
       - run: pnpm --dir ui build
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      # DONE.md: complejidad, secretos, vulnerabilidades, dependencias sin usar y tipos de la UI
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit,cargo-machete,gitleaks
+      - run: scripts/check-quality.sh
       - run: cargo test --workspace
       - run: cargo test -p goymusic-audio --test mp3_gapless -- --ignored
       # MPRIS on a real, isolated session bus
