@@ -34,7 +34,7 @@ Reproductor de música de código abierto para **tu propia música**. Biblioteca
 
 ## Instalación
 
-Cada commit en `main` genera un `.deb` y un `.AppImage` en los artefactos de [Actions](../../actions).
+Cada commit en `main` genera un `.deb` y un `.AppImage` en los artefactos de [Actions](https://github.com/javipiazza94/GoyMusic/actions).
 
 Para compilarlo tú mismo necesitas Rust estable, Node 24 y pnpm 11, más estas dependencias en Debian/Ubuntu:
 
