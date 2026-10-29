@@ -1,0 +1,3 @@
+# Umbral de partida permisivo; bajarlo cuando la línea base esté limpia.
+# Solo actúa cuando se activa clippy::cognitive_complexity (lo hace scripts/check-quality.sh).
+cognitive-complexity-threshold = 25
